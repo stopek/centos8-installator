@@ -1,0 +1,8 @@
+1,Instalacja GIT
+2,Instalacja YARN
+3,Instalacja CLI Symfony
+4,Generuj Cloudflare SSL
+5,Instalacja Composera
+,
+b,Wstecz
+x,Wyjście

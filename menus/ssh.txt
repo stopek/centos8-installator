@@ -1,0 +1,5 @@
+1,Generuj klucz SSH
+2,Zmień port SSH
+,
+b,Wstecz
+x,Wyjście

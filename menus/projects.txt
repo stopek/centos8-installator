@@ -1,0 +1,4 @@
+1,Czysty projekt Symfony
+,
+b,Wstecz
+x,Wyjście

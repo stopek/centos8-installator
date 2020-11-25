@@ -1,0 +1,6 @@
+1,Instalacja NGINX
+2,Instalacja MySQL
+3,Instalacja phpMyAdmin
+,
+b,Wstecz
+x,Wyjście

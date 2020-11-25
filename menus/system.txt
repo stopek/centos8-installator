@@ -1,0 +1,5 @@
+1,Postawowy upgrade
+2,Pokaż statusy usług
+,
+b,Wstecz
+x,Wyjście

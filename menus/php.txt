@@ -1,0 +1,9 @@
+1,PHP 7.2
+2,PHP 7.3
+3,PHP 7.4
+4,PHP 8.0
+5,Instalacja domyślnej wersji php
+6,Dodaj rozszerzenie do PHP
+,
+b,Wstecz
+x,Wyjście
