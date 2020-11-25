@@ -1,5 +1,5 @@
 #!/bin/bash
-# koment
+# koment, v2
 source ./utils/common.sh
 source ./utils/util.sh
 
