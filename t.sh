@@ -9,10 +9,6 @@ base="$(dirname "$(readlink -f "$0")")"
 #domyślnie 0 oznacza, że żadna
 #opcja nie będzie zaznaczona
 current_selected_menu=0
-echo -e "\033[31mHello\e[0m World"
-
-
-
 
 function define_next_selected() {
   local max="$1"
@@ -161,5 +157,5 @@ function init() {
   esac
 }
 
-#clear
-#init "0"
+clear
+init "0"
