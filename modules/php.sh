@@ -9,7 +9,7 @@ function _repo_install() {
 }
 
 function _array_to_php_version() {
-  array="$2"
+  local array="$2"
   for index in "${!array[@]}"
   do
       printf "php$1-${array[index]} "
@@ -29,14 +29,14 @@ function _conf_update() {
 # $1 - wersja php (np. 7.2, 7.3, 8.0)
 # $2 - rozszerzenia bez wersji (np. php-fpm php-mysqli)
 function _base_install() {
-    php_version="$1"
-    without_dot="${php_version/./}"
+    local php_version="$1"
+    local without_dot="${php_version/./}"
 
     sudo dnf module reset php
     sudo dnf module enable "php:remi-$php_version"
 
     IFS=' ' read -r -a array <<< "$2"
-    php_list=$(_array_to_php_version "$without_dot" "$array")
+    local php_list=$(_array_to_php_version "$without_dot" "$array")
     sudo dnf install --enablerepo=remi-test "php$without_dot" $php_list -y
 
     sudo systemctl start "php$without_dot-php-fpm"
@@ -130,7 +130,7 @@ function function_add_extension_to_php() {
 
   if [[ "$var_install_to_php" != "n" ]]; then
     _read "install_to_php_extension" "Wprowadź jedno rozszerzenie"
-    php_without_dot="${var_install_to_php//./}"
+    local php_without_dot="${var_install_to_php//./}"
 
     sudo dnf module reset php
     sudo dnf module enable php:remi-"$var_install_to_php"

@@ -13,7 +13,7 @@ function function_create_ssh() {
     _read "ssh_user_name" "Podaj nazwę użytkownika"
     ssh-copy-id "$var_ssh_user_name"@"$ip"
 
-    auth_file="/etc/ssh/sshd_config"
+    local auth_file="/etc/ssh/sshd_config"
     replace_in_file "PasswordAuthentication yes" "PasswordAuthentication no" "$auth_file"
     replace_in_file "ChallengeResponseAuthentication yes" "ChallengeResponseAuthentication no" "$auth_file"
     replace_in_file "UsePAM yes" "UsePAM no" "$auth_file"
@@ -67,8 +67,8 @@ function function_ssh_port() {
 
   if [[ "$var_change_ssh_port" == "y" ]]; then
     #tworzymy kopię
-    sh_file="/etc/ssh/sshd_config"
-    date_format=$(date +%Y_%m_%d:%H:%M:%S)
+    local sh_file="/etc/ssh/sshd_config"
+    local date_format=$(date +%Y_%m_%d:%H:%M:%S)
 
     sudo cp "$sh_file" "${sh_file}_${date_format}"
 

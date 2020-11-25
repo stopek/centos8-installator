@@ -27,7 +27,7 @@ function clear_symfony() {
     fi
 
     #właściwe tworzenie projektu
-    www_dir=$(get_config "paths" "www_dir")
+    local www_dir=$(get_config "paths" "www_dir")
     echo "Instalacje są w $www_dir"
     cd "$www_dir" || exit
 

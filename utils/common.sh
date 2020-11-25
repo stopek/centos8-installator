@@ -6,7 +6,7 @@ FALSE=1
 #generuje menu z pliku
 # $1 - ścieżka do pliku .txt z wpisami menu bez .txt na końcu
 function generate_menu() {
-  menu_filepath="${1}.txt"
+  local menu_filepath="${1}.txt"
 
   if file_exists "$menu_filepath";
   then
@@ -76,7 +76,7 @@ function _read() {
   line
 
   declare -g var_$1
-  ref=var_$1
+  local ref=var_$1
 
   read -r -p "| " "var_$1"
 

@@ -10,7 +10,7 @@ function function_install_composer() {
 
   if [[ "$var_install_composer" == "y" ]]; then
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    HASH="$(wget -q -O - https://composer.github.io/installer.sig)"
+    local HASH="$(wget -q -O - https://composer.github.io/installer.sig)"
     php -r "if (hash_file('SHA384', 'composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
     sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
   fi
@@ -74,7 +74,7 @@ function function_create_cloudflare_ssl() {
       sh acme.sh --issue --dns dns_cf --ocsp-must-staple --keylength 4096 -d "$var_installed_domain" -d "*.$var_installed_domain" --force
 
       #miejsce gdzie przenosimy pliki certyfikatu
-      new_dir="/etc/nginx/ssl/$var_installed_domain/"
+      local new_dir="/etc/nginx/ssl/$var_installed_domain/"
       mkdir -p "$new_dir"
 
       #generujemy dhparam
@@ -89,7 +89,7 @@ function function_create_cloudflare_ssl() {
         --cert-file "${new_dir}${var_installed_domain}.cer"
 
       #przenosimy .conf dla tej domeny
-      target_conf_path=/etc/nginx/ssl/"$var_installed_domain.conf"
+      local target_conf_path=/etc/nginx/ssl/"$var_installed_domain.conf"
       cp ~/automat/base-ssl.conf "$target_conf_path"
       sudo sed -i -e "s/{{domain}}/$var_installed_domain/gi" "$target_conf_path"
 

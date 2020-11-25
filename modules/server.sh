@@ -41,7 +41,7 @@ function function_install_phpmyadmin() {
   _read "install_phpmyadmin" "Czy instalować phpmyadmin?" "y/n"
 
   if [[ "$var_install_phpmyadmin" == "y" ]]; then
-    php_my_admin_dir="/usr/share/phpmyadmin/"
+    local php_my_admin_dir="/usr/share/phpmyadmin/"
     if [ -d "$php_my_admin_dir" ];
     then
       echo "Katalog $php_my_admin_dir istnieje."
@@ -65,7 +65,7 @@ function function_install_phpmyadmin() {
     rm -rf phpMyAdmin-4.9.4-all-languages
     sudo mv config.sample.inc.php config.inc.php
 
-    base64hash=$(openssl rand -base64 32)
+    local base64hash=$(openssl rand -base64 32)
     sudo sed -i "s/$cfg\['blowfish_secret'\] = '';/$cfg\['blowfish_secret'\] = '$base64hash';/gi" config.inc.php
 
     mkdir -p "${php_my_admin_dir}tmp/"
