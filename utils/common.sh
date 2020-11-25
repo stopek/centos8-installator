@@ -81,6 +81,7 @@ array_contains() {
 # $1 - nazwa zmiennej
 # $2 - opis/pytanie dot. wprowadzanej wartości
 # $3 - dostępne opcje wprowadzone po / (np: y/x). Jeśli puste wtedy tylko wymaga wprowadzenia.
+# $4 - parametry do read (domyślnie: "-r -p")
 function _read() {
   IFS='/' read -ra my_array <<<"$3"
 
@@ -103,11 +104,30 @@ function _read() {
   declare -g var_$1
   local ref=var_$1
 
-  read -rsn1 -p "| " "var_$1"
+  #jeśli parametr $4 nie zostanie przekazany
+  #wtedy użytkownik może wprowadzić dowolny
+  #tekst i potwierdzić go ENTER'em
+  #
+  #w przeciwnym razie ustawiamy tak, żeby
+  #potwierdzenie było od razu po wciśnięciu
+  #pierwszego znaku
+  if [ -z "$4" ];
+  then
+    read -r -p "| " "var_$1"
+  else
+    local escape_char=$(printf "\u1b")
+    read ${4} "| " "var_$1"
+
+    #jeśli znak jest specjalny wtedy potrzebujemy "2" znaków
+    if [[ ${!ref} == $escape_char ]]; then
+      read ${5} "| " "var_$1"
+    fi
+  fi
 
   line
 
-  if [ -n "$3" ]; then
+  if [ -n "$3" ];
+  then
     if [[ "$3" != ":allow_empty:" ]];
     then
       if ! array_contains "${!ref}" "${my_array[@]}"; then

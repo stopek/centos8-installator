@@ -1,5 +1,5 @@
 #!/bin/bash
-# koment, v2
+
 source ./utils/common.sh
 source ./utils/util.sh
 
@@ -10,6 +10,9 @@ base="$(dirname "$(readlink -f "$0")")"
 #opcja nie będzie zaznaczona
 current_selected_menu=0
 
+#funkcja określa aktualny numer zaznaczonego elementu
+# $1 - maxymalna ilość elementów
+# $2 - typ akcji (up|down)
 function define_next_selected() {
   local max="$1"
   local type="$2"
@@ -33,6 +36,8 @@ function define_next_selected() {
   fi
 }
 
+#główna funkcja zarządzająca wyborami
+# $1 - numer aktualnie wybranego menu
 function init() {
   cd "$base" || exit
   controllers=$(ls controllers/*.sh)
@@ -82,13 +87,7 @@ function init() {
   line
 
   #czekamy na wybór modułu
-  escape_char=$(printf "\u1b")
-  _read "controller_choice" "Wybierz kategorię" ":allow_empty:"
-
-  #jeśli znak jest specjalny wtedy potrzebujemy "2"znaków
-  if [[ $var_controller_choice == $escape_char ]]; then
-      read -rsn2 var_controller_choice
-  fi
+  _read "controller_choice" "Wybierz kategorię" ":allow_empty:" "-rsn1 -p" "-rsn2 -p"
 
   if [[ -z $var_controller_choice && $current_selected_menu -gt 0 ]];
   then
@@ -128,7 +127,7 @@ function init() {
         line
 
         #czekamy na dla danego controllera
-        _read "sub_controller_choice" "Co robimy?"
+        _read "sub_controller_choice" "Co robimy?" "" "-rsn1 -p"
         case "$var_sub_controller_choice" in
           "x")
             clear
@@ -136,7 +135,7 @@ function init() {
           ;;
           "b")
             clear
-            init "0"
+            init "$current_selected_menu"
           ;;
           *)
             call_controller_function "$current_entry" "controller" "$var_sub_controller_choice"
@@ -145,17 +144,16 @@ function init() {
             line
             read -r
             clear
-            init "0"
+            init "$current_selected_menu"
           ;;
         esac
-
       else
         clear
-        init "0"
+        init "$current_selected_menu"
       fi
       ;;
   esac
 }
 
 clear
-init "0"
+init "$current_selected_menu"
