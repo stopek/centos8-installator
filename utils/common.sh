@@ -84,13 +84,18 @@ array_contains() {
 function _read() {
   IFS='/' read -ra my_array <<<"$3"
 
+  echo -e "\e[30m\e[107m"
   line
   echo "| $2 "
 
-  if [ -n "$3" ]; then
-    echo "| <dostępne: $3>"
-  else
-    echo "| <wprowadź dowolnie>"
+  if [[ "$3" != ":allow_empty:" ]];
+  then
+    if [ -n "$3" ];
+    then
+      echo "| <dostępne: $3>"
+    else
+      echo "| <wprowadź dowolnie>"
+    fi
   fi
 
   line
@@ -98,16 +103,19 @@ function _read() {
   declare -g var_$1
   local ref=var_$1
 
-  read -r -p "| " "var_$1"
+  read -rsn1 -p "| " "var_$1"
 
   line
 
   if [ -n "$3" ]; then
-    if ! array_contains "${!ref}" "${my_array[@]}"; then
-      echo -e "\e[37m\e[41mWartość nieprawidłowa, spróbuj ponownie...\e[0m"
-      echo ""
+    if [[ "$3" != ":allow_empty:" ]];
+    then
+      if ! array_contains "${!ref}" "${my_array[@]}"; then
+        echo -e "\e[37m\e[41mWartość nieprawidłowa, spróbuj ponownie...\e[0m"
+        echo ""
 
-      _read "$1" "$2" "$3"
+        _read "$1" "$2" "$3"
+      fi
     fi
   else
     if [ -z "${!ref}" ]; then
@@ -116,6 +124,7 @@ function _read() {
       _read "$1" "$2" "$3"
     fi
   fi
+  echo -e "\e[0m"
 }
 
 #sprawdza czy dana komenda istnieje

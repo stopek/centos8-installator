@@ -5,11 +5,44 @@ source ./utils/util.sh
 
 base="$(dirname "$(readlink -f "$0")")"
 
+#pozycja aktualnie wybranego menu
+#domyślnie 0 oznacza, że żadna
+#opcja nie będzie zaznaczona
+current_selected_menu=0
+echo -e "\033[31mHello\e[0m World"
+
+
+
+
+function define_next_selected() {
+  local max="$1"
+  local type="$2"
+
+  if [[ $current_selected_menu = 0  && "$type" = "up" ]]; then
+    current_selected_menu=0
+    return 0
+  fi
+
+  if [[ $current_selected_menu = $max && "$type" = "down" ]]; then
+    current_selected_menu=$max
+    return 0
+  fi
+
+  if [ "$type" = "up" ]; then
+    ((current_selected_menu=current_selected_menu-1))
+  fi
+
+  if [ "$type" = "down" ]; then
+    ((current_selected_menu=current_selected_menu+1))
+  fi
+}
+
 function init() {
   cd "$base" || exit
   controllers=$(ls controllers/*.sh)
 
   declare -A controllers_array
+  local max_key_number="0"
 
   line
 
@@ -33,8 +66,18 @@ function init() {
     entry=${controllers_array[$KEY]}
     name=$(call_controller_function "$entry" "name")
 
+    if [[ $current_selected_menu = $KEY ]]; then
+      printf "\e[30m\e[107m"
+    fi
+
     #dodajemy controller do menu
     double_column "$KEY" "$name"
+
+    if [[ $current_selected_menu = $KEY ]]; then
+      printf "\e[0m"
+    fi
+
+    max_key_number="$KEY"
   done
 
   line
@@ -43,9 +86,35 @@ function init() {
   line
 
   #czekamy na wybór modułu
-  _read "controller_choice" "Wybierz grupę instalacji"
+  escape_char=$(printf "\u1b")
+  _read "controller_choice" "Wybierz kategorię" ":allow_empty:"
 
+  #jeśli znak jest specjalny wtedy potrzebujemy "2"znaków
+  if [[ $var_controller_choice == $escape_char ]]; then
+      read -rsn2 var_controller_choice
+  fi
+
+  if [[ -z $var_controller_choice && $current_selected_menu -gt 0 ]];
+  then
+      var_controller_choice=$current_selected_menu
+  fi
+
+  #case dla głównego controllera
   case "$var_controller_choice" in
+    #kliknięcie strzałki w górę
+    '[A')
+      define_next_selected "$max_key_number" "up"
+      clear
+      init "$max_key_number"
+    ;;
+
+    #kliknięcie strzałi w dół
+    '[B')
+      define_next_selected "$max_key_number" "down"
+      clear
+      init "$max_key_number"
+    ;;
+
     "x")
       clear
       exit
@@ -71,7 +140,7 @@ function init() {
           ;;
           "b")
             clear
-            init
+            init "0"
           ;;
           *)
             call_controller_function "$current_entry" "controller" "$var_sub_controller_choice"
@@ -80,17 +149,17 @@ function init() {
             line
             read -r
             clear
-            init
+            init "0"
           ;;
         esac
 
       else
         clear
-        init
+        init "0"
       fi
       ;;
   esac
 }
 
-clear
-init
+#clear
+#init "0"

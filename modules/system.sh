@@ -12,8 +12,6 @@ function function_install_base() {
   fi
 }
 
-
-
 #wyświetla statusy zainstalowanych usług
 function function_show_statuses() {
   _read "show_statuses" "Pokazać stan usług?" "y/n"
