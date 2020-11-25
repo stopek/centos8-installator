@@ -8,13 +8,13 @@ function function_install_nginx() {
   _read "install_nginx" "Czy instalować NGINX?" "y/n"
 
   if [[ "$var_install_nginx" == "y" ]]; then
-    mkdir -p /etc/nginx/sites-enabled/
-    mkdir -p /etc/nginx/sites-available/
-
     #instalacja nginx
     sudo dnf install nginx
     sudo systemctl enable nginx
     sudo systemctl start nginx
+
+    mkdir -p /etc/nginx/sites-enabled
+    mkdir -p /etc/nginx/sites-available
   fi
 }
 
@@ -42,6 +42,7 @@ function function_install_phpmyadmin() {
 
   if [[ "$var_install_phpmyadmin" == "y" ]]; then
     local php_my_admin_dir="/usr/share/phpmyadmin/"
+
     if [ -d "$php_my_admin_dir" ];
     then
       echo "Katalog $php_my_admin_dir istnieje."
@@ -59,7 +60,7 @@ function function_install_phpmyadmin() {
     wget https://files.phpmyadmin.net/phpMyAdmin/4.9.4/phpMyAdmin-4.9.4-all-languages.zip
     unzip phpMyAdmin-4.9.4-all-languages.zip
     mkdir -p "$php_my_admin_dir"
-    unzip phpMyAdmin-4.9.4-all-languages.zip -d /usr/share/phpmyadmin/
+    unzip phpMyAdmin-4.9.4-all-languages.zip -d "$php_my_admin_dir"
     cd "$php_my_admin_dir" || exit
     mv phpMyAdmin-4.9.4-all-languages/* .
     rm -rf phpMyAdmin-4.9.4-all-languages

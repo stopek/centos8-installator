@@ -33,6 +33,26 @@ function call_controller_function() {
   eval "${2}" "$3" "$4"
 }
 
+# wywołuje funkcję z modułu
+# $1 - nazwa modułu
+# $2 - nazwa funkcji
+# $3 - parametr przekazywany do funkcji
+function call_module_function() {
+  source "./modules/${1}.sh"
+
+  eval "${2}" "${3}"
+}
+
+function service_exists() {
+  # Restart apache2 service, if it exists.
+  if service --status-all | grep -Fq "$1";
+  then
+    return 0
+  else
+    return 1
+  fi
+}
+
 # zwraca ustawienie z pliku
 # $1 - nazwa pliku/grupy ustawień
 # $2 - nazwa funkcji/ustawienia
@@ -143,3 +163,4 @@ function string_exists_in_file() {
     return 1
   fi
 }
+

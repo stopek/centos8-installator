@@ -65,7 +65,10 @@ function init() {
         #czekamy na dla danego controllera
         _read "sub_controller_choice" "Co robimy?"
         case "$var_sub_controller_choice" in
-          "x") exit ;;
+          "x")
+            clear
+            exit
+          ;;
           "b")
             clear
             init

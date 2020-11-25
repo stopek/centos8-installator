@@ -2,7 +2,7 @@
 
 source ./utils/common.sh
 
-
+# instaluje czystą wersję symfony
 function clear_symfony() {
   _read "clear_symfony" "Zainstalować czysty projekt symfony?" "y/n"
 
@@ -12,18 +12,21 @@ function clear_symfony() {
     if ! command_exists symfony;
     then
       echo "Symfony CLI nie jest zainstalowane!"
+      call_module_function "tools" "function_install_symfony"
+    fi
 
-      source ./modules/tools.sh
-      function_install_symfony
+    #sprawdzamy dostępność gita
+    if ! command_exists git;
+    then
+      echo "GIT nie jest zainstalowany!"
+      call_module_function "tools" "function_install_git"
     fi
 
     #sprawdzamy dostępność composera
     if ! command_exists composer;
     then
       echo "Composer nie jest zainstalowany!"
-
-      source ./modules/tools.sh
-      function_install_composer
+      call_module_function "tools" "function_install_composer"
     fi
 
     #właściwe tworzenie projektu

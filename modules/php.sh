@@ -37,7 +37,7 @@ function _base_install() {
 
     IFS=' ' read -r -a array <<< "$2"
     local php_list=$(_array_to_php_version "$without_dot" "$array")
-    sudo dnf install --enablerepo=remi-test "php$without_dot" $php_list -y
+    sudo dnf install --enablerepo=remi-test "php$without_dot" ${php_list} -y
 
     sudo systemctl start "php$without_dot-php-fpm"
     sudo systemctl enable "php$without_dot-php-fpm"
@@ -46,12 +46,15 @@ function _base_install() {
 #restart
 # $1 - wersja php (np. 74)
 function _restart() {
-    #taktyczny restart
+  #taktyczny restart
+  if service_exists 'php-fpm';
+  then
     sudo systemctl restart php-fpm
+  fi
 
-    sudo systemctl restart "php$1-php-fpm"
+  sudo systemctl restart "php$1-php-fpm"
 
-    restart_nginx
+  restart_nginx
 }
 
 #instalacja php 7.2
@@ -124,12 +127,22 @@ function function_install_php80() {
   fi
 }
 
-#do danej wersji php dodajemy nowe rozszerzenie
+# do danej wersji php dodajemy nowe rozszerzenie
 function function_add_extension_to_php() {
-  _read "install_to_php" "Do której wersji?" "7.2/7.3/7.4/8.0/n"
+  local php_versions=$(get_config "options" "php_versions")
+  _read "install_to_php" "Do której wersji?" "${php_versions}/n"
 
-  if [[ "$var_install_to_php" != "n" ]]; then
-    _read "install_to_php_extension" "Wprowadź jedno rozszerzenie"
+  if [[ "$var_install_to_php" != "n" ]];
+  then
+    #sprawdzamy to ta wersja php jest zainstalowana
+    local command_php="php${var_install_to_php/./}"
+    if ! command_exists "${command_php}";
+    then
+      echo "Wersja ${command_php} nie istnieje. Zainstaluj ją napierw"
+      return 1
+    fi
+
+    _read "install_to_php_extension" "Wprowadź jedno rozszerzenie (dla; php72-php-json będzie to: php-json)"
     local php_without_dot="${var_install_to_php//./}"
 
     sudo dnf module reset php
@@ -140,9 +153,10 @@ function function_add_extension_to_php() {
   fi
 }
 
-#instalacja domyślnej wersji php
+# instalacja domyślnej wersji php
 function function_install_default_php() {
-  _read "install_default_php" "Czy instalować phpmyadmin?" "7.2/7.3/7.4/8.0/n"
+  local php_versions=$(get_config "options" "php_versions")
+  _read "install_default_php" "Jaką domyślną wersję zainstalować?" "${php_versions}/n"
 
   if [[ "$var_install_default_php" != "n" ]]; then
     sudo dnf module reset php
