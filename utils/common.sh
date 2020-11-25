@@ -36,11 +36,11 @@ function call_controller_function() {
 # wywołuje funkcję z modułu
 # $1 - nazwa modułu
 # $2 - nazwa funkcji
-# $3 - parametr przekazywany do funkcji
+# $3 $4 - parametry przekazywane do funkcji
 function call_module_function() {
   source "./modules/${1}.sh"
 
-  eval "${2}" "${3}"
+  eval "${2}" "${3}" "${4}"
 }
 
 function service_exists() {
