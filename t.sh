@@ -2,43 +2,20 @@
 
 source ./utils/common.sh
 source ./utils/util.sh
+source ./utils/core.sh
 
 base="$(dirname "$(readlink -f "$0")")"
 
 #pozycja aktualnie wybranego menu
 #domyślnie 0 oznacza, że żadna
 #opcja nie będzie zaznaczona
-current_selected_menu=0
-
-#funkcja określa aktualny numer zaznaczonego elementu
-# $1 - maxymalna ilość elementów
-# $2 - typ akcji (up|down)
-function define_next_selected() {
-  local max="$1"
-  local type="$2"
-
-  if [[ $current_selected_menu = 0  && "$type" = "up" ]]; then
-    current_selected_menu=0
-    return 0
-  fi
-
-  if [[ $current_selected_menu = $max && "$type" = "down" ]]; then
-    current_selected_menu=$max
-    return 0
-  fi
-
-  if [ "$type" = "up" ]; then
-    ((current_selected_menu=current_selected_menu-1))
-  fi
-
-  if [ "$type" = "down" ]; then
-    ((current_selected_menu=current_selected_menu+1))
-  fi
-}
+current_selected_menu=1
 
 #główna funkcja zarządzająca wyborami
 # $1 - numer aktualnie wybranego menu
 function init() {
+  header_services
+
   cd "$base" || exit
   controllers=$(ls controllers/*.sh)
 
@@ -135,7 +112,7 @@ function init() {
           ;;
           "b")
             clear
-            init "$current_selected_menu"
+            init "1"
           ;;
           *)
             call_controller_function "$current_entry" "controller" "$var_sub_controller_choice"
@@ -144,7 +121,7 @@ function init() {
             line
             read -r
             clear
-            init "$current_selected_menu"
+            init "1"
           ;;
         esac
       else

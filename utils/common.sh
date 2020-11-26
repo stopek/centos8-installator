@@ -10,6 +10,11 @@ function generate_menu() {
 
   if file_exists "$menu_filepath";
   then
+#    cat "$menu_filepath" | while read line
+#    do
+#      echo "$line"
+#    done
+
     cat "$menu_filepath" | sed 's/\t/,|,/g' | column -s ',' -t
   else
     echo "Menu $menu_filepath nie istnieje"
@@ -20,6 +25,10 @@ function double_column() {
     echo "$1,$2" | column -s ',' -t
 }
 
+# to nie jest zwykła linia
+# to magiczna linia oddzielająca
+# dobro od zła!
+# cześć magicznej linii!
 line() {
   echo "+--------------------------------------------------+"
 }
@@ -43,8 +52,9 @@ function call_module_function() {
   eval "${2}" "${3}" "${4}"
 }
 
+# sprawdza czy dana usługa jest zainstalowana
+# $1 - nazwa usługi (np. nginx)
 function service_exists() {
-  # Restart apache2 service, if it exists.
   if service --status-all | grep -Fq "$1";
   then
     return 0
@@ -148,18 +158,27 @@ function _read() {
 }
 
 #sprawdza czy dana komenda istnieje
+# $1 - nazwa komendy (np. nano)
 function command_exists() {
   type "$1" &>/dev/null
 }
 
+# instalacja z repo yum
+# $1 - nazwa paczki do zainstalownia (np. nginx)
 function simple_via_yum_modules() {
   sudo yum module install "$1"
 }
 
+# instalacja przez dnf
+# $1 - nazwa paczki do zainstalowania (np. nginx)
 function simple_via_dnf() {
   dnf install "$1"
 }
 
+# zamienia treść w pliku
+# $1 - treść do zamiany
+# $2 - treść, na którą będzie zamieniane
+# $3 - plik, w którym zamieniamy
 function replace_in_file() {
   sudo sed -i -e "s/$1/$2/gi" "$3"
 }
@@ -183,13 +202,13 @@ function restart_nginx() {
 }
 
 #funkcja sprawdza czy w danym pliku znaleziono stringa
+# $1 - szukana treść
+# $2 - nazwa pliku
 function string_exists_in_file() {
-  #nie znaleziono
   if [[ $(grep "$1" $2) ]];
   then
-    return 0
+    return $TRUE
   else
-    return 1
+    return $FALSE
   fi
 }
-
