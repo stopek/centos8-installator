@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ./utils/common.sh
-
 function function_create_ssh() {
   _read "create_ssh_key" "Rozpocząć proces tworzenia klucza?" "y/n"
 

@@ -1,13 +1,14 @@
 #!/bin/bash
 
-source ./utils/common.sh
-source ./utils/util.sh
-source ./utils/core.sh
-
 base="$(dirname "$(readlink -f "$0")")"
 
-wsnpm
-yum install -y gcc-c++ make
+source ./utils/core.sh
+
+import_utils "util"
+import_utils "common"
+
+#wsnpm
+#yum install -y gcc-c++ make
 
 #function function_install_mongodb() {
 #  local -r repo_dir="/etc/yum.repos.d"
@@ -70,33 +71,37 @@ yum install -y gcc-c++ make
 #function_install_mongodb
 
 
-#pozycja aktualnie wybranego menu
-#domyślnie 0 oznacza, że żadna
-#opcja nie będzie zaznaczona
+# pozycja aktualnie wybranego menu
+# domyślnie 0 oznacza, że żadna
+# opcja nie będzie zaznaczona
 current_selected_menu=1
 
-#główna funkcja zarządzająca wyborami
+# główna funkcja zarządzająca wyborami
 # $1 - numer aktualnie wybranego menu
 function init() {
+  # dodatkowe opcje informujące o aktualnych usługach
   header_services
 
+  # w razie ucieczki w modułach
+  # wracamy do katalogu wyjściowego
   cd "$base" || exit
-  controllers=$(ls controllers/*.sh)
 
   declare -A controllers_array
   local max_key_number="0"
 
   line
 
-  #pętla po dostępnych controllerach
+  controllers=$(controllers_list)
+  # pętla po dostępnych controllerach
   for entry in $controllers
   do
-    choice=$(call_controller_function "$entry" "choice")
+    controller_name=$(getFileName "${entry}")
+    choice=$(call_controller_function "${controller_name}" "choice")
 
-    controllers_array["$choice"]="$entry"
+    controllers_array["$choice"]="${controller_name}"
   done
 
-  #sortujemy
+  #sortujemy klucze z tablicy z listą controllerów
   KEYS=$(
     for KEY in ${!controllers_array[@]}; do
       echo "$KEY"
@@ -105,8 +110,8 @@ function init() {
 
   #wyświetlamy menu
   for KEY in $KEYS; do
-    entry=${controllers_array[$KEY]}
-    name=$(call_controller_function "$entry" "name")
+    controller_name=${controllers_array[$KEY]}
+    name=$(call_controller_function "$controller_name" "name")
 
     if [[ $current_selected_menu = $KEY ]]; then
       printf "\e[30m\e[107m"
@@ -127,7 +132,7 @@ function init() {
   double_column "x" "Exit"
   line
 
-  #czekamy na wybór modułu
+  #czekamy na wybór controllera
   _read "controller_choice" "Wybierz kategorię" ":allow_empty:" "-rsn1 -p" "-rsn2 -p"
 
   if [[ -z $var_controller_choice && $current_selected_menu -gt 0 ]];
@@ -144,7 +149,7 @@ function init() {
       init "$max_key_number"
     ;;
 
-    #kliknięcie strzałi w dół
+    #kliknięcie strzałki w dół
     '[B')
       define_next_selected "$max_key_number" "down"
       clear
@@ -179,6 +184,7 @@ function init() {
             init "1"
           ;;
           *)
+            import_module "${current_entry}"
             call_controller_function "$current_entry" "controller" "$var_sub_controller_choice"
             line
             echo "Kliknij dowolny przycisk aby kontynuować"
@@ -195,6 +201,8 @@ function init() {
       ;;
   esac
 }
+
+log "init" "Bash was started"
 
 clear
 init "$current_selected_menu"

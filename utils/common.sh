@@ -33,25 +33,6 @@ line() {
   echo "+--------------------------------------------------+"
 }
 
-# zwraca funkcję z danego modułu
-# $1 - ścieżka do modułu
-# $2 - nazwa funkcji z modułu do wywołania
-function call_controller_function() {
-  source "$1"
-
-  eval "${2}" "$3" "$4"
-}
-
-# wywołuje funkcję z modułu
-# $1 - nazwa modułu
-# $2 - nazwa funkcji
-# $3 $4 - parametry przekazywane do funkcji
-function call_module_function() {
-  source "./modules/${1}.sh"
-
-  eval "${2}" "${3}" "${4}"
-}
-
 # sprawdza czy dana usługa jest zainstalowana
 # $1 - nazwa usługi (np. nginx)
 function service_exists() {
@@ -61,15 +42,6 @@ function service_exists() {
   else
     return 1
   fi
-}
-
-# zwraca ustawienie z pliku
-# $1 - nazwa pliku/grupy ustawień
-# $2 - nazwa funkcji/ustawienia
-function get_config() {
-  source "./configs/$1.sh"
-
-  eval "${2}"
 }
 
 
@@ -171,8 +143,8 @@ function simple_via_yum_modules() {
 
 # instalacja przez dnf
 # $1 - nazwa paczki do zainstalowania (np. nginx)
-function simple_via_dnf() {
-  dnf install "$1"
+function install_via_dnf() {
+  sudo dnf install "$1"
 }
 
 # zamienia treść w pliku

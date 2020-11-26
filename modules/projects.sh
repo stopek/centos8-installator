@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ./utils/common.sh
-
 # instaluje czystą wersję symfony
 function clear_symfony() {
   _read "clear_symfony" "Zainstalować czysty projekt symfony?" "y/n"

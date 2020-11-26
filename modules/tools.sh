@@ -1,8 +1,5 @@
 #!/bin/bash
 
-source ./utils/common.sh
-
-
 function function_install_nextcloud() {
   #sprawdzamy czy nginx jest zainstalowany
   if ! command_exists nginx; then
@@ -164,7 +161,7 @@ function function_install_symfony() {
 }
 
 function function_install_git() {
-  simple_via_dnf "git"
+  install_via_dnf "git"
 
   _read "git_user_email" "Podaj wartość git user.email"
   _read "git_user_name" "Podaj wartość git user.name"
@@ -194,7 +191,7 @@ function _cloudflare_ssl() {
 
   if ! command_exists socat;
   then
-    simple_via_dnf "socat"
+    install_via_dnf "socat"
   fi
 
   #wprowadzamy adres email przypisany do cloudflare

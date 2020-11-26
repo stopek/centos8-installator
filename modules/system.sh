@@ -1,7 +1,5 @@
 #!/bin/bash
 
-source ./utils/common.sh
-
 #postawowy update systemu
 function function_install_base() {
   _read "install_base" "Czy podstawowy upgrade?" "y/n"

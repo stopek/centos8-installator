@@ -1,25 +1,22 @@
 #!/bin/bash
 
-source ./utils/common.sh
-source ./modules/tools.sh
+ID=3
+MODULE_NAME="Narzędzia"
 
-ID=6
-MODULE_NAME="Dodatkowe narzędzia"
-
-#wybór tej opcji spowoduje uruchomienie
-#controllera dla tego modułu
+# wybór tej opcji spowoduje uruchomienie
+# controllera dla tego modułu
 function choice() {
   echo $ID
 }
 
-#zwraca nazwę wyświetlaną w menu
+# zwraca nazwę wyświetlaną w menu
 function name() {
   echo "$MODULE_NAME"
 }
 
-#główny kontroller
-#powinien zawierać switch
-function controller() {
+# główny router
+# $1 - opcja wybrana przez użytkownika
+function router() {
   case "$1" in
     "1") function_install_git ;;
     "2") function_install_yarn ;;

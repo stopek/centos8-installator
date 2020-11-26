@@ -1,5 +1,97 @@
 #!/bin/bash -x
 
+# zwraca ustawienie z pliku
+# $1 - nazwa pliku/grupy ustawień
+# $2 - nazwa funkcji/ustawienia
+function get_config() {
+  source "./configs/$1.sh"
+
+  eval "${2}"
+}
+
+# wczytuje plik z narzędziami
+# $1 - nazwa pliku (np. core)
+function import_utils() {
+  local -r utils_dir=$(get_config "paths" "utils_dir")
+
+  import "${utils_dir}" "${1}"
+}
+
+# wczytuje plik z narzędziami
+# $1 - nazwa pliku (np. core)
+function import_module() {
+  local -r modules_dir=$(get_config "paths" "modules_dir")
+
+  import "${modules_dir}" "${1}"
+}
+
+# wczytuje plik z controllerami
+# $1 - nazwa pliku (np. core)
+function import_controller() {
+  local -r controller_dir=$(get_config "paths" "controller_dir")
+
+  import "${controller_dir}" "${1}"
+}
+
+# funkcja importująca source
+# $1 - nazwa katalogu do importu
+#      parametr powinien zawierać / na początku
+#      i nie powinien kończyć się / (np. /utils)
+# $2 - nazwa pliku do importu bez rozszerzenia (np. core)
+function import() {
+  # shellcheck disable=SC1090
+  # shellcheck disable=SC2154
+  source "${base}${1}/${2}.sh"
+}
+
+# zwraca funkcję z danego modułu
+# $1 - ścieżka do controllera
+# $2 - nazwa funkcji z modułu do wywołania
+function call_controller_function() {
+  import_controller "${1}"
+
+  eval "${2}" "$3" "$4"
+}
+
+# wywołuje funkcję z modułu
+# $1 - nazwa modułu
+# $2 - nazwa funkcji
+# $3 $4 - parametry przekazywane do funkcji
+function call_module_function() {
+  import_module "${1}"
+
+  eval "${2}" "${3}" "${4}"
+}
+
+# zwraca listę controllerów
+function controllers_list() {
+  local -r controller_dir=$(get_config "paths" "controller_dir")
+  controller_dir_full="${base}${controller_dir}/*.sh"
+
+  # shellcheck disable=SC2086
+  ls ${controller_dir_full}
+}
+
+function log() {
+  local -r logs_dir=$(get_config "paths" "logs_dir")
+
+  local -r file="${1}"
+  local -r message="${2}"
+  local -r group="${3}"
+
+  if [ ! -z "$group" ]
+  then
+    local -r log_path="${base}${logs_dir}/${file}.txt"
+  else
+    local -r log_dir="${base}${logs_dir}/${group}/"
+    mkdir -p "${log_dir}"
+
+    local -r log_path="${log_dir}${file}.txt"
+  fi
+
+  echo "${message}"  | tee -a "${log_path}"
+}
+
 function header_service_item() {
   local -r service_name="${1}"
   local -r service_display="${2}"

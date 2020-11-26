@@ -1,8 +1,5 @@
 #!/bin/bash
 
-source ./utils/common.sh
-
-
 #instalacja nginx
 function function_install_nginx() {
   _read "install_nginx" "Czy instalować NGINX?" "y/n"

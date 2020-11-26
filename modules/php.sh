@@ -1,8 +1,6 @@
 #!/bin/bash
 
-source ./utils/common.sh
-
-function _repo_install() {
+function epel_repository() {
     sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     sudo dnf install https://rpms.remirepo.net/enterprise/remi-release-8.rpm
     sudo dnf install yum-utils
@@ -62,7 +60,7 @@ function function_install_php72() {
   _read "install_php72" "Czy instalować PHP 7.2" "y/n"
 
   if [[ "$var_install_php72" == "y" ]]; then
-    _repo_install
+    epel_repository
 
     #instalacja
     _base_install "7.2" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
@@ -80,7 +78,7 @@ function function_install_php73() {
   _read "install_php73" "Czy instalować PHP 7.3" "y/n"
 
   if [[ "$var_install_php73" == "y" ]]; then
-    _repo_install
+    epel_repository
 
     #instalacja
     _base_install "7.3" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
@@ -98,7 +96,7 @@ function function_install_php74() {
   _read "install_php74" "Czy instalować PHP 7.4" "y/n"
 
   if [[ "$var_install_php74" == "y" ]]; then
-    _repo_install
+    epel_repository
 
     #instalacja
     _base_install "7.4" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
