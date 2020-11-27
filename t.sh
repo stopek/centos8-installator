@@ -9,7 +9,6 @@ import_utils "common"
 
 #wsnpm
 #yum install -y gcc-c++ make
-
 #function function_install_mongodb() {
 #  local -r repo_dir="/etc/yum.repos.d"
 #  sudo rm -rf "${repo_dir}/mongod*"
@@ -70,6 +69,12 @@ import_utils "common"
 #
 #function_install_mongodb
 
+
+  configs_dir=$(get_config "paths" "configs_dir")
+
+  import "${configs_dir}" "${1}"
+
+exit 1
 
 # pozycja aktualnie wybranego menu
 # domyślnie 0 oznacza, że żadna
@@ -160,6 +165,7 @@ function init() {
       clear
       exit
     ;;
+
     *)
       if [ ${controllers_array[$var_controller_choice]+_} ];
       then
@@ -167,6 +173,7 @@ function init() {
         entry_filename=$(basename "$current_entry")
         module_name="${entry_filename/.sh/}"
 
+        log "action" "Użytkownik wybrał akcję moduł (${current_entry})"
         clear
         line
         generate_menu "./menus/$module_name"
@@ -185,6 +192,7 @@ function init() {
           ;;
           *)
             import_module "${current_entry}"
+            log "action" "Użytkownik wybrał akcję modułu (${current_entry}->${var_sub_controller_choice})"
             call_controller_function "$current_entry" "controller" "$var_sub_controller_choice"
             line
             echo "Kliknij dowolny przycisk aby kontynuować"

@@ -1,12 +1,26 @@
 #!/bin/bash -x
 
+function current_date() {
+  # shellcheck disable=SC2034
+  display_date=$(date +"%Y-%m-%d %H:%M:%S")
+  echo "${display_date}"
+}
+
 # zwraca ustawienie z pliku
 # $1 - nazwa pliku/grupy ustawień
 # $2 - nazwa funkcji/ustawienia
 function get_config() {
-  source "./configs/$1.sh"
+  source "${base}/configs/${2}.sh"
 
   eval "${2}"
+}
+
+# wczytuje plik z ustawieniami
+# $1 - nazwa pliku (np. core)
+function import_configs() {
+  local -r configs_dir=$(get_config "paths" "configs_dir")
+
+  import "${configs_dir}" "${1}"
 }
 
 # wczytuje plik z narzędziami
@@ -73,6 +87,7 @@ function controllers_list() {
 }
 
 function log() {
+  local -r date=$(current_date)
   local -r logs_dir=$(get_config "paths" "logs_dir")
 
   local -r file="${1}"
@@ -89,7 +104,10 @@ function log() {
     local -r log_path="${log_dir}${file}.txt"
   fi
 
-  echo "${message}"  | tee -a "${log_path}"
+  echo -e "DATA-Line-1\n$(cat input)" > input
+#  (echo "${new_message}"; cat "${log_path}") > "${log_path}"
+#  sed -i.old "1s;^;${new_message};" "${log_path}"
+  echo "${date}: ${message}"  | tee -a "${log_path}"
 }
 
 function header_service_item() {

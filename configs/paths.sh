@@ -48,3 +48,12 @@ function controller_dir() {
 function logs_dir() {
   echo "/logs"
 }
+
+# zwraca ścieżkę do katalogu z ustawieniami
+# ścieżka powinna byc bezwzględna względem
+# głównego pliku .sh
+# powinna rozpoczynać się / i nie zawierać
+# go na samym końcu
+function configs_dir() {
+  echo "/configs"
+}
