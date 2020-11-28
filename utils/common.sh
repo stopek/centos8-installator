@@ -6,15 +6,10 @@ FALSE=1
 #generuje menu z pliku
 # $1 - ścieżka do pliku .txt z wpisami menu bez .txt na końcu
 function generate_menu() {
-  local menu_filepath="${1}.txt"
+  local menu_filepath="${base}/menus/${1}.txt"
 
   if file_exists "$menu_filepath";
   then
-#    cat "$menu_filepath" | while read line
-#    do
-#      echo "$line"
-#    done
-
     cat "$menu_filepath" | sed 's/\t/,|,/g' | column -s ',' -t
   else
     echo "Menu $menu_filepath nie istnieje"
@@ -30,7 +25,7 @@ function double_column() {
 # dobro od zła!
 # cześć magicznej linii!
 line() {
-  echo "+--------------------------------------------------+"
+  echo "+-----------------------------------------------------------------------------+"
 }
 
 # sprawdza czy dana usługa jest zainstalowana
@@ -44,6 +39,14 @@ function service_exists() {
   fi
 }
 
+# sprawdza czy funkcja istnieje
+# $1 - nazwa funkcji
+#
+# function_exists function_name && echo "Exists" || echo "No such function"
+function_exists() {
+    declare -f -F "$1" > /dev/null
+    return $?
+}
 
 #zwykla funkcja in_array
 array_contains() {
@@ -97,15 +100,18 @@ function _read() {
   then
     read -r -p "| " "var_$1"
   else
-    local escape_char=$(printf "\u1b")
-    read ${4} "| " "var_$1"
+    local -r escape_char=$(printf "\u1b")
+    read -r ${4} " " "var_$1"
 
     #jeśli znak jest specjalny wtedy potrzebujemy "2" znaków
-    if [[ ${!ref} == $escape_char ]]; then
-      read ${5} "| " "var_$1"
+    if [[ ${!ref} == "$escape_char" ]]; then
+      read -r ${5} " " "var_$1"
     fi
   fi
 
+  log "app" "Na pytanie: ${2} wybrał: ${!ref}"
+
+  echo
   line
 
   if [ -n "$3" ];
@@ -126,6 +132,7 @@ function _read() {
       _read "$1" "$2" "$3"
     fi
   fi
+
   echo -e "\e[0m"
 }
 

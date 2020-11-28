@@ -85,7 +85,8 @@ function function_install_nextcloud() {
 
   #określamy domenę dla konfiguracji nginxa
   _read "nextcloud_domain" "Podaj nazwę domeny (bez www i http/s)"
-  local target_copy_path="/etc/nginx/sites-available/$var_nextcloud_domain.conf"
+  # shellcheck disable=SC2154
+  local -r target_copy_path="/etc/nginx/sites-available/$var_nextcloud_domain.conf"
   sudo cp "./templates/nextcloud.conf" "$target_copy_path"
   replace_in_file "{{domain}}" "$var_nextcloud_domain" "$php_conf_file"
 
@@ -93,6 +94,7 @@ function function_install_nextcloud() {
   _read "nextcloud_ssl" "Czy instalujemy SSL?" "y/n"
 
   #przechodzimy proces generowania SSL
+  # shellcheck disable=SC2154
   if [[ "$var_nextcloud_ssl" == "y" ]];
   then
     _cloudflare_ssl
@@ -107,7 +109,8 @@ function function_install_nextcloud() {
   if [[ "$var_nextcloud_ssl" == "n" ]];
   then
     _read "ssl_domain_name_ssl" "Podaj nazwę pliku .conf z ustawieniami certyfikatu (/etc/nginx/ssl/< ssl_domain_ssl_path >.conf)"
-    local ssl_domain_path_full="/etc/nginx/ssl/$var_ssl_domain_name_ssl.conf"
+    # shellcheck disable=SC2154
+    local -r ssl_domain_path_full="/etc/nginx/ssl/$var_ssl_domain_name_ssl.conf"
     replace_in_file "#{{security_part}}" "$ssl_domain_path_full" "$output_conf_path"
   fi
   #https://upcloud.com/community/tutorials/install-nextcloud-centos/
@@ -118,6 +121,7 @@ function function_install_nextcloud() {
 function function_install_composer() {
   _read "install_composer" "Czy instalować composera?" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_composer" == "y" ]];
   then
     #wymuszamy instalację php
@@ -134,8 +138,8 @@ function function_install_composer() {
     fi
 
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-    local HASH="$(wget -q -O - https://composer.github.io/installer.sig)"
-    php -r "if (hash_file('SHA384', 'composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+    local -r hash="$(wget -q -O - https://composer.github.io/installer.sig)"
+    php -r "if (hash_file('SHA384', 'composer-setup.php') === '$hash') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
     sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
   fi
 }

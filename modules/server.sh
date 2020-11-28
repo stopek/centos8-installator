@@ -4,6 +4,7 @@
 function function_install_nginx() {
   _read "install_nginx" "Czy instalować NGINX?" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_nginx" == "y" ]]; then
     #instalacja nginx
     sudo dnf install nginx
@@ -19,6 +20,7 @@ function function_install_nginx() {
 function function_install_mysql() {
   _read "install_mysql" "Czy instalować MYSQL?" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_mysql" == "y" ]]; then
     sudo dnf install mysql-server
     sudo systemctl start mysqld.service
@@ -37,6 +39,7 @@ function function_install_mysql() {
 function function_install_phpmyadmin() {
   _read "install_phpmyadmin" "Czy instalować phpmyadmin?" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_phpmyadmin" == "y" ]]; then
     local php_my_admin_dir="/usr/share/phpmyadmin/"
 

@@ -2,7 +2,7 @@
 
 function animation() {
   if ! command_exists pv; then
-
+    install_via_dnf "epel-release"
     install_via_dnf "pv"
   fi
 

@@ -6,11 +6,16 @@ function epel_repository() {
     sudo dnf install yum-utils
 }
 
-function _array_to_php_version() {
-  local array="$2"
+# zamienia tablicę z rozszerzeniami
+# na postać z wersją php tzn
+# php-pfm -> php72-php-fpm
+# $1 - wersja php (np. 72)
+# $2 - tablica z rozszerzeniami (np. [php-fpm, php-json])
+function array_to_php_version() {
+  local -r array="$2"
   for index in "${!array[@]}"
   do
-      printf "php$1-${array[index]} "
+      printf "php%s-%s " "$1" "${array[index]}"
   done
 }
 
@@ -34,8 +39,8 @@ function _base_install() {
     sudo dnf module enable "php:remi-$php_version"
 
     IFS=' ' read -r -a array <<< "$2"
-    local php_list=$(_array_to_php_version "$without_dot" "$array")
-    sudo dnf install --enablerepo=remi-test "php$without_dot" ${php_list} -y
+    local -r php_list=$(array_to_php_version "$without_dot" "${array[@]}")
+    sudo dnf install --enablerepo=remi-test "php$without_dot" "${php_list}" -y
 
     sudo systemctl start "php$without_dot-php-fpm"
     sudo systemctl enable "php$without_dot-php-fpm"
@@ -59,6 +64,7 @@ function _restart() {
 function function_install_php72() {
   _read "install_php72" "Czy instalować PHP 7.2" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_php72" == "y" ]]; then
     epel_repository
 
@@ -77,6 +83,7 @@ function function_install_php72() {
 function function_install_php73() {
   _read "install_php73" "Czy instalować PHP 7.3" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_php73" == "y" ]]; then
     epel_repository
 
@@ -95,6 +102,7 @@ function function_install_php73() {
 function function_install_php74() {
   _read "install_php74" "Czy instalować PHP 7.4" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_php74" == "y" ]]; then
     epel_repository
 
@@ -113,6 +121,7 @@ function function_install_php74() {
 function function_install_php80() {
   _read "install_php80" "Czy instalować PHP 8.0" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_php80" == "y" ]]; then
     #instalacja
     _base_install "8.0" "php-fpm php-mysqli php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
@@ -127,9 +136,10 @@ function function_install_php80() {
 
 # do danej wersji php dodajemy nowe rozszerzenie
 function function_add_extension_to_php() {
-  local php_versions=$(get_config "options" "php_versions")
+  local -r php_versions=$(get_config "options" "php_versions")
   _read "install_to_php" "Do której wersji?" "${php_versions}/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_to_php" != "n" ]];
   then
     #sprawdzamy to ta wersja php jest zainstalowana
@@ -145,6 +155,7 @@ function function_add_extension_to_php() {
 
     sudo dnf module reset php
     sudo dnf module enable php:remi-"$var_install_to_php"
+    # shellcheck disable=SC2154
     sudo dnf install "php$php_without_dot-$var_install_to_php_extension"
 
     sudo systemctl restart "php${php_without_dot}-php-fpm"
@@ -153,12 +164,16 @@ function function_add_extension_to_php() {
 
 # instalacja domyślnej wersji php
 function function_install_default_php() {
-  local php_versions=$(get_config "options" "php_versions")
+  local -r php_versions=$(get_config "options" "php_versions")
   _read "install_default_php" "Jaką domyślną wersję zainstalować?" "${php_versions}/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_install_default_php" != "n" ]]; then
+    epel_repository
+
     sudo dnf module reset php
     sudo dnf module enable php:remi-"$var_install_default_php"
     sudo dnf install php php-opcache php-gd php-curl php-mysqlnd
+    sudo dnf install --enablerepo=remi-test "php$without_dot" ${php_list} -y
   fi
 }

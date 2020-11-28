@@ -3,6 +3,7 @@
 function function_create_ssh() {
   _read "create_ssh_key" "Rozpocząć proces tworzenia klucza?" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_create_ssh_key" == "y" ]]; then
     ip=$(curl -s https://api.ipify.org)
     _read "ssh_user_email" "Podaj adres email"
@@ -31,6 +32,7 @@ function function_create_ssh() {
 # $3 - stary port do usunięcia
 function function_ssh_set_port() {
   _read "new_port_number" "Podaj nowy port"
+  # shellcheck disable=SC2154
   replace_in_file "$2" "Port $var_new_port_number" "$1"
   echo "Port został zmieniony z domyślnego na $var_new_port_number"
 
@@ -50,6 +52,7 @@ function function_ssh_change_port() {
   _read "old_port_number" "Podaj stary port ssh"
 
   #jeśli w pliku znaleziono zapis: Port <port> wtedy
+  # shellcheck disable=SC2154
   if string_exists_in_file "Port $var_old_port_number";
   then
       function_ssh_set_port "$1" "Port $var_old_port_number" "$var_old_port_number"
@@ -63,10 +66,11 @@ function function_ssh_change_port() {
 function function_ssh_port() {
   _read "change_ssh_port" "Rozpocząć proces zmiany portu SSH?" "y/n"
 
+  # shellcheck disable=SC2154
   if [[ "$var_change_ssh_port" == "y" ]]; then
     #tworzymy kopię
-    local sh_file="/etc/ssh/sshd_config"
-    local date_format=$(date +%Y_%m_%d:%H:%M:%S)
+    local -r sh_file="/etc/ssh/sshd_config"
+    local -r date_format=$(date +%Y_%m_%d:%H:%M:%S)
 
     sudo cp "$sh_file" "${sh_file}_${date_format}"
 
