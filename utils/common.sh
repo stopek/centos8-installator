@@ -6,6 +6,7 @@ FALSE=1
 #generuje menu z pliku
 # $1 - ścieżka do pliku .txt z wpisami menu bez .txt na końcu
 function generate_menu() {
+  # shellcheck disable=SC2154
   local menu_filepath="${base}/menus/${1}.txt"
 
   if file_exists "$menu_filepath";
@@ -20,11 +21,18 @@ function double_column() {
     echo "$1,$2" | column -s ',' -t
 }
 
+# wyświetla błąd
+# $1 - treść wiadomości
+function warning() {
+  local -r message="${1}"
+  echo -e "\e[37m\e[41m${message}\e[0m"
+}
+
 # to nie jest zwykła linia
 # to magiczna linia oddzielająca
 # dobro od zła!
 # cześć magicznej linii!
-line() {
+function line() {
   echo "+-----------------------------------------------------------------------------+"
 }
 
@@ -43,13 +51,13 @@ function service_exists() {
 # $1 - nazwa funkcji
 #
 # function_exists function_name && echo "Exists" || echo "No such function"
-function_exists() {
+function function_exists() {
     declare -f -F "$1" > /dev/null
     return $?
 }
 
 #zwykla funkcja in_array
-array_contains() {
+function array_contains() {
   local seeking=$1
   shift
   local in=1

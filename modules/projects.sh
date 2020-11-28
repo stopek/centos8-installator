@@ -7,26 +7,9 @@ function clear_symfony() {
   # shellcheck disable=SC2154
   if [[ "$var_clear_symfony" == "y" ]];
   then
-    #sprawdzamy dostępność symfony
-    if ! command_exists symfony;
-    then
-      echo "Symfony CLI nie jest zainstalowane!"
-      call_module_function "tools" "function_install_symfony"
-    fi
-
-    #sprawdzamy dostępność gita
-    if ! command_exists git;
-    then
-      echo "GIT nie jest zainstalowany!"
-      call_module_function "tools" "function_install_git"
-    fi
-
-    #sprawdzamy dostępność composera
-    if ! command_exists composer;
-    then
-      echo "Composer nie jest zainstalowany!"
-      call_module_function "tools" "function_install_composer"
-    fi
+    require_symfony
+    require_git
+    require_composer
 
     #właściwe tworzenie projektu
     local -r www_dir=$(www_dir)

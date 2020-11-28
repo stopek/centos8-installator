@@ -1,16 +1,29 @@
 #!/bin/bash
 
 function function_install_nextcloud() {
-  #sprawdzamy czy nginx jest zainstalowany
-  if ! command_exists nginx; then
-    echo "Nginx nie jest zainstalowany"
-    call_module_function "server" "function_install_nginx"
-  fi
+  require_nginx
+
+  #użytkownik lokalny
+  local -r nextcloud_user="nextcloud"
+  local -r nextcloud_password="QWERTY123456qwerty!"
+
+  #użytkownik do logowania się do bazy danych
+  local -r nextcloud_db_user="nextclouddbuser"
+  local -r nextcloud_db_password="QWERTY123456qwerty!"
+  local -r nextcloud_db_name="nextclouddb"
+
+  #użytkownik/administrator do zarządzania samym nextcloudem
+  local -r nextcloud_admin_login="admin"
+  local -r nextcloud_admin_password="QWERTY123456qwerty!"
+
+  #użytkownik lokalny do postgresql
+  local -r nextcloud_postgres_user="postgres"
+  local -r nextcloud_postgres_password="QWERTY123456qwerty!"
 
   #tworzenie użytkownika
-  adduser nextcloud
-  passwd nextcloud
-  usermod -aG wheel nextcloud
+  adduser "${nextcloud_user}"
+  (echo "${nextcloud_password}"; echo "${nextcloud_password}") | passwd "${nextcloud_user}"
+  usermod -aG wheel "${nextcloud_user}"
 
   #dodanie repo i instalacja postgresql
   sudo dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
@@ -23,14 +36,11 @@ function function_install_nextcloud() {
   sudo /usr/pgsql-12/bin/postgresql-12-setup initdb
   sudo systemctl enable postgresql-12
   sudo systemctl start postgresql-12
-  sudo passwd postgres
-  su -l postgres
-    psql
-      CREATE USER nextclouddbuser WITH PASSWORD 'nextclouddbuserpassword';
-      CREATE DATABASE nextclouddb;
-      GRANT ALL PRIVILEGES ON DATABASE nextclouddb TO nextclouddbuser;
-      \q
-    exit
+  (echo "${nextcloud_postgres_password}"; echo "${nextcloud_postgres_password}") | passwd "${nextcloud_postgres_user}"
+
+  sudo -u "${nextcloud_postgres_user}" psql -c "CREATE USER ${nextcloud_db_user} WITH PASSWORD '${nextcloud_db_password}';"
+  sudo -u "${nextcloud_postgres_user}" psql -c "CREATE DATABASE ${nextcloud_db_name};"
+  sudo -u "${nextcloud_postgres_user}" psql -c "GRANT ALL PRIVILEGES ON DATABASE ${nextcloud_db_name} TO ${nextcloud_db_user};"
 
   replace_in_file "host \{1,\}all \{1,\}all \{1,\}127.0.0.1\/32 \{1,\}ident" "host all all 127.0.0.1\/32 md5" "$pg_hba"
   replace_in_file "host \{1,\}replication \{1,\}all \{1,\}::1\/128 \{1,\}ident" "host all all ::1\/128 md5" "$pg_hba"
@@ -87,8 +97,10 @@ function function_install_nextcloud() {
   _read "nextcloud_domain" "Podaj nazwę domeny (bez www i http/s)"
   # shellcheck disable=SC2154
   local -r target_copy_path="/etc/nginx/sites-available/$var_nextcloud_domain.conf"
-  sudo cp "./templates/nextcloud.conf" "$target_copy_path"
+  sudo cp "${base}/templates/nextcloud.conf" "$target_copy_path"
+  sudo ln -s "$target_copy_path" "/etc/nginx/sites-enabled/"
   replace_in_file "{{domain}}" "$var_nextcloud_domain" "$php_conf_file"
+  replace_in_file "{{fastcgi_pass}}" "127.0.0.1:9074" "$php_conf_file"
 
   #zagadnienia SSL
   _read "nextcloud_ssl" "Czy instalujemy SSL?" "y/n"
@@ -101,7 +113,7 @@ function function_install_nextcloud() {
 
     #jeśli proces tworzenia certyfiaktu przebiegnie pomyślnie
     #wtedy ustawiamy ścieżkę do "partu z konfiguracją ssl"
-    replace_in_file "#{{security_part}}" "$output_conf_path" "$output_conf_path"
+    replace_in_file "#{{security_part}}" "include ${output_conf_path};" "$target_copy_path"
   fi
 
   #jeśłi nie ma być generowany certyfikat wtedy zakładamy
@@ -110,12 +122,26 @@ function function_install_nextcloud() {
   then
     _read "ssl_domain_name_ssl" "Podaj nazwę pliku .conf z ustawieniami certyfikatu (/etc/nginx/ssl/< ssl_domain_ssl_path >.conf)"
     # shellcheck disable=SC2154
-    local -r ssl_domain_path_full="/etc/nginx/ssl/$var_ssl_domain_name_ssl.conf"
-    replace_in_file "#{{security_part}}" "$ssl_domain_path_full" "$output_conf_path"
+    local -r ssl_domain_path_full="/etc/nginx/ssl/${var_ssl_domain_name_ssl}.conf"
+    replace_in_file "#{{security_part}}" "include ${ssl_domain_path_full};" "$target_copy_path"
   fi
   #https://upcloud.com/community/tutorials/install-nextcloud-centos/
-}
 
+  cd "${install_dir}" || exit
+  sudo -u nginx php occ maintenance:install \
+    --data-dir /usr/share/nginx/data \
+    --database "pgsql" \
+    --database-name "${nextcloud_db_name}" \
+    --database-user "${nextcloud_db_user}" \
+    --database-pass "${nextcloud_db_password}" \
+    --admin-user "${nextcloud_admin_login}" \
+    --admin-pass "${nextcloud_admin_password}"
+
+    sudo -u nginx php occ db:add-missing-indices
+    sudo -u nginx php occ maintenance:mode --on
+    sudo -u nginx php occ db:convert-filecache-bigint
+    sudo -u nginx php occ maintenance:mode --off
+}
 
 #instalacja composera
 function function_install_composer() {
@@ -153,7 +179,7 @@ function function_install_yarn() {
   sudo dnf install yarn
 }
 
-#instaluje narzędzie symfony
+#instaluje cli symfony
 function function_install_symfony() {
   _read "install_symfony" "Zainstalować CLI Symfony?" "y/n"
 
@@ -175,16 +201,9 @@ function function_install_git() {
 }
 
 function _cloudflare_ssl() {
-  if ! command_exists nginx; then
-    _read "install_nginx" "Czy zainstalować nginx?" "y/n"
-
-    if [[ "$var_install_nginx" == "y" ]];
-    then
-      call_module_function "server" "function_install_nginx"
-    else
-      return 1
-    fi
-  fi
+  require_nginx
+  require_git
+  require_socat
 
   #instalacja właściwa
   rm -rf /tmp/acme.sh
@@ -193,17 +212,12 @@ function _cloudflare_ssl() {
   touch /root/.bashrc
   cd /tmp/acme.sh/ || exit
 
-  if ! command_exists socat;
-  then
-    install_via_dnf "socat"
-  fi
-
   #wprowadzamy adres email przypisany do cloudflare
   _read "account_email" "Podaj adres email"
   sh acme.sh --install --accountemail "$var_account_email"
 
   #wprowadzamy wygenerowany token
-  _read "account_token" "Podaj token"
+  _read "account_token" "Podaj token (https://dash.cloudflare.com/profile/api-tokens)"
   export CF_Token="$var_account_token"
 
   #wprowadzamy nazwę domeny i generujemy certyfikat
@@ -227,7 +241,7 @@ function _cloudflare_ssl() {
 
   #przenosimy .conf dla tej domeny
   local target_conf_path=/etc/nginx/ssl/"$var_installed_domain.conf"
-  cp ./templates/base-ssl.conf "$target_conf_path"
+  cp "${base}/templates/cloudflare.ssl.conf" "$target_conf_path"
   sudo sed -i -e "s/{{domain}}/$var_installed_domain/gi" "$target_conf_path"
 
   #przenosimy wygenerowane

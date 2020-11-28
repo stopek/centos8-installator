@@ -3,6 +3,7 @@
 3,Instalacja CLI Symfony
 4,Generuj Cloudflare SSL
 5,Instalacja Composera
+6,Instalacja Nextcloud'a
 ,
 b,Wstecz
 x,Wyjście

@@ -23,6 +23,7 @@ function router() {
     "3") function_install_symfony ;;
     "4") function_create_cloudflare_ssl ;;
     "5") function_install_composer ;;
+    "6") function_install_nextcloud ;;
     "*");;
   esac
 }
