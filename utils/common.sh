@@ -153,13 +153,36 @@ function command_exists() {
 # instalacja z repo yum
 # $1 - nazwa paczki do zainstalownia (np. nginx)
 function simple_via_yum_modules() {
-  sudo yum module install "$1"
+  sudo yum module install "${1}"
 }
 
 # instalacja przez dnf
 # $1 - nazwa paczki do zainstalowania (np. nginx)
 function install_via_dnf() {
-  sudo dnf install "$1"
+  sudo dnf install "${1}"
+}
+
+# instalacja przez dnf
+# dodatkowo funkcja uruchamia teraz
+# i dodaje usługę do autoloadu
+# $1 - nazwa paczki do zainstalowania (np. nginx)
+function install_via_dns_service() {
+  sudo dnf install -y "${1}"
+  sudo systemctl enable "${1}.service"
+  sudo systemctl start "${1}.service"
+}
+
+function escape_forward_slashes() {
+     # Validate parameters
+     if [ -z "$1" ]
+     then
+             echo -e "Error - no parameter specified!"
+             return 1
+     fi
+
+     # Perform replacement
+     echo ${1} | sed -e "s#/#\\\/#g"
+     return 0
 }
 
 # zamienia treść w pliku
@@ -167,7 +190,27 @@ function install_via_dnf() {
 # $2 - treść, na którą będzie zamieniane
 # $3 - plik, w którym zamieniamy
 function replace_in_file() {
-  sudo sed -i -e "s/$1/$2/gi" "$3"
+  local -r slashed_from=$(escape_forward_slashes "${1}")
+  local -r slashed_to=$(escape_forward_slashes "${2}")
+
+  sudo sed -i -e "s/${slashed_from}/${slashed_to}/gi" "$3"
+}
+
+# pyta użytkownika o usunięcie folderu z zawartością
+# jeśli folder istnieje
+function ask_for_remove_dir_if_exists() {
+  local -r dir_to_remove="${1}"
+  if [[ -d "${dir_to_remove}" ]];
+  then
+    #określamy domenę dla konfiguracji nginxa
+    _read "remove_existing_dir" "Katalog ${dir_to_remove} istnieje. Usunąć razem z zawartością?" "y/n"
+
+    # shellcheck disable=SC2154
+    if [[ "$var_remove_existing_dir" == "y" ]];
+    then
+      sudo rm -rf "${dir_to_remove}"
+    fi
+  fi
 }
 
 #sprawdza czy plik istnieje

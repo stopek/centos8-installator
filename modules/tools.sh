@@ -5,20 +5,27 @@ function function_install_nextcloud() {
 
   #użytkownik lokalny
   local -r nextcloud_user="nextcloud"
-  local -r nextcloud_password="QWERTY123456qwerty!"
+  local -r nextcloud_password="123abc456def1121"
+
+  #użytkownik lokalny do postgresql
+  local -r postgres_user="postgres"
+  local -r postgres_password="123abc456def1121"
 
   #użytkownik do logowania się do bazy danych
   local -r nextcloud_db_user="nextclouddbuser"
-  local -r nextcloud_db_password="QWERTY123456qwerty!"
+  local -r nextcloud_db_password="123abc456def1121"
   local -r nextcloud_db_name="nextclouddb"
 
   #użytkownik/administrator do zarządzania samym nextcloudem
-  local -r nextcloud_admin_login="admin"
-  local -r nextcloud_admin_password="QWERTY123456qwerty!"
+  local -r admin_login="admin"
+  local -r admin_password="123abc456def1121"
 
-  #użytkownik lokalny do postgresql
-  local -r nextcloud_postgres_user="postgres"
-  local -r nextcloud_postgres_password="QWERTY123456qwerty!"
+  local -r pg_hba="/var/lib/pgsql/12/data/pg_hba.conf"
+  local -r install_dir="/var/www/nextcloud"
+  local -r data_dir="/usr/share/nginx/data"
+#  local -r php_conf_file="/etc/opt/remi/php74/php-fpm.d/www.conf"
+  local -r php_conf_file="/etc/php-fpm.d/www.conf"
+  local -r nextcloud_config_file="${install_dir}/config/config.php"
 
   #tworzenie użytkownika
   adduser "${nextcloud_user}"
@@ -28,35 +35,37 @@ function function_install_nextcloud() {
   #dodanie repo i instalacja postgresql
   sudo dnf -y install https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
 
-  local pg_hba="/var/lib/pgsql/12/data/pg_hba.conf"
-  local install_dir="/var/www/nextcloud"
-
   sudo dnf -qy module disable postgresql
   sudo dnf -y install postgresql12 postgresql12-server
   sudo /usr/pgsql-12/bin/postgresql-12-setup initdb
   sudo systemctl enable postgresql-12
   sudo systemctl start postgresql-12
-  (echo "${nextcloud_postgres_password}"; echo "${nextcloud_postgres_password}") | passwd "${nextcloud_postgres_user}"
+  (echo "${postgres_password}"; echo "${postgres_password}") | passwd "${postgres_user}"
 
-  sudo -u "${nextcloud_postgres_user}" psql -c "CREATE USER ${nextcloud_db_user} WITH PASSWORD '${nextcloud_db_password}';"
-  sudo -u "${nextcloud_postgres_user}" psql -c "CREATE DATABASE ${nextcloud_db_name};"
-  sudo -u "${nextcloud_postgres_user}" psql -c "GRANT ALL PRIVILEGES ON DATABASE ${nextcloud_db_name} TO ${nextcloud_db_user};"
+  #tworzymy bazę i użytkownika nextcloudowego
+  sudo -u "${postgres_user}" psql -c "CREATE USER ${nextcloud_db_user} WITH PASSWORD '${nextcloud_db_password}';"
+  sudo -u "${postgres_user}" psql -c "CREATE DATABASE ${nextcloud_db_name};"
+  sudo -u "${postgres_user}" psql -c "GRANT ALL PRIVILEGES ON DATABASE ${nextcloud_db_name} TO ${nextcloud_db_user};"
+  sudo -u "${postgres_user}" psql -c "ALTER DATABASE ${nextcloud_db_name} OWNER TO ${nextcloud_db_user};"
 
-  replace_in_file "host \{1,\}all \{1,\}all \{1,\}127.0.0.1\/32 \{1,\}ident" "host all all 127.0.0.1\/32 md5" "$pg_hba"
-  replace_in_file "host \{1,\}replication \{1,\}all \{1,\}::1\/128 \{1,\}ident" "host all all ::1\/128 md5" "$pg_hba"
+  replace_in_file "host \{1,\}all \{1,\}all \{1,\}127.0.0.1/32 \{1,\}ident" "host all all 127.0.0.1/32 md5" "$pg_hba"
+  replace_in_file "host \{1,\}all \{1,\}all \{1,\}::1/128 \{1,\}ident" "host all all ::1/128 md5" "$pg_hba"
 
   sudo systemctl restart postgresql-12
 
-  #instalujemy redisa
-  sudo dnf install -y redis
-  sudo systemctl enable redis.service
-  sudo systemctl start redis.service
+  #instalujemy redisa i uruchamiamy usługę
+  install_via_dns_service "redis"
 
   #instalujemy php7.4 wraz z wymaganymi rozszerzeniami
-  call_module_function "php" "_base_install" "7.4" "php php-gd php-mbstring php-intl php-pecl-apcu php-opcache php-json php-pecl-zip php-pear php-pecl-imagick php-fpm php-pecl-redis5 php-intl php-pgsql php-common php-pdo php-xml php-lz4 php-xml php-pecl-crypto php-pecl-rar php-pecl-pq php-pecl-lzf php-cli php-pecl-apcu-bc -y"
+#  call_module_function "php" "_base_install" "7.4" "php php-gd php-mbstring php-intl php-pecl-apcu php-opcache php-process php-gd php-zip php-json php-pecl-zip php-pear php-pecl-imagick php-fpm php-pecl-redis5 php-intl php-pgsql php-common php-pdo php-xml php-lz4 php-xml php-pecl-crypto php-pecl-rar php-pecl-pq php-pecl-lzf php-cli php-pecl-apcu-bc -y"
+#
+#  #zmiana w konfiguracjach www.conf dla wersji 7.4
+#  call_module_function "php" "_conf_update" "74"
+#
+#  #restart php74-fpm
+#  call_module_function "php" "_restart" "74"
 
   #zmieniamy konfigurację www.conf dla wersji 7.4
-  local php_conf_file="/etc/opt/remi/php74/php-fpm.d/www.conf"
   replace_in_file ";env[HOSTNAME]" "env[HOSTNAME]" "$php_conf_file"
   replace_in_file ";env[PATH]" "env[PATH]" "$php_conf_file"
   replace_in_file ";env[TMP]" "env[TMP]" "$php_conf_file"
@@ -70,9 +79,13 @@ function function_install_nextcloud() {
   sudo chown -R root:nginx /var/lib/php/{opcache,wsdlcache}
   sudo chown -R nginx:nginx /var/lib/php/session
 
-  #pobieramy nextclouda
-  cd /tmp || exit
-  wget https://download.nextcloud.com/server/releases/nextcloud-18.0.7.tar.bz2
+  cd /tmp/ || exit
+
+  #pobieramy nextclouda jeśli paczka nie istnieje.
+  if [ ! -f "nextcloud-18.0.7.tar.bz2" ];
+  then
+    wget https://download.nextcloud.com/server/releases/nextcloud-18.0.7.tar.bz2
+  fi
 
   #pobieramy klucze do weryfikacji
   wget https://download.nextcloud.com/server/releases/nextcloud-18.0.7.tar.bz2.sha256
@@ -85,7 +98,8 @@ function function_install_nextcloud() {
   gpg --verify nextcloud-18.0.7.tar.bz2.asc nextcloud-18.0.7.tar.bz2
   tar -xvf nextcloud-18.0.7.tar.bz2
 
-  sudo rm -rf "$install_dir"
+  ask_for_remove_dir_if_exists "$install_dir"
+
   sudo cp -r nextcloud "$install_dir"
 
   mkdir -p "$install_dir/data"
@@ -93,54 +107,86 @@ function function_install_nextcloud() {
 
   restart_nginx
 
-  #określamy domenę dla konfiguracji nginxa
-  _read "nextcloud_domain" "Podaj nazwę domeny (bez www i http/s)"
+  # konfigurujemy ses linux aby nextcloud
+  # miał dostęp do tych folderów
+  sudo mkdir -p "${data_dir}"
+  sudo semanage fcontext -a -t httpd_sys_rw_content_t "${data_dir}(/.*)?"
+  sudo semanage fcontext -a -t httpd_sys_rw_content_t "${install_dir}/config(/.*)?"
+  sudo semanage fcontext -a -t httpd_sys_rw_content_t "${install_dir}/apps(/.*)?"
+  sudo semanage fcontext -a -t httpd_sys_rw_content_t "${install_dir}/.htaccess"
+  sudo semanage fcontext -a -t httpd_sys_rw_content_t "${install_dir}/.user.ini"
+  sudo semanage fcontext -a -t httpd_sys_rw_content_t "${install_dir}/3rdparty/aws/aws-sdk-php/src/data/logs(/.*)?"
+
+  sudo restorecon -R "${install_dir}/"
+  sudo restorecon -R "${data_dir}/"
+  sudo setsebool -P httpd_can_network_connect on
+
+  sudo chown -R nginx:nginx "${data_dir}"
+  sudo chown -R nginx:nginx "${install_dir}"
+  # określamy domenę dla konfiguracji nginxa
+  _read "nextcloud_domain" "Podaj nazwę domeny (bez www i http/s np. cloud.domena.pl)"
+
   # shellcheck disable=SC2154
   local -r target_copy_path="/etc/nginx/sites-available/$var_nextcloud_domain.conf"
+  #na wszelki wypadek usuwamy plik jeśli istnieje
+  rm -rf "${target_copy_path}"
   sudo cp "${base}/templates/nextcloud.conf" "$target_copy_path"
-  sudo ln -s "$target_copy_path" "/etc/nginx/sites-enabled/"
-  replace_in_file "{{domain}}" "$var_nextcloud_domain" "$php_conf_file"
-  replace_in_file "{{fastcgi_pass}}" "127.0.0.1:9074" "$php_conf_file"
 
-  #zagadnienia SSL
+  local -r sites_enabled_dir="/etc/nginx/sites-enabled/"
+
+  # na wszelki wypadek usuwamy dowiązanie
+  rm -rf "${sites_enabled_dir}${var_nextcloud_domain}.conf"
+  sudo ln -s "$target_copy_path" "${sites_enabled_dir}"
+
+  replace_in_file "{{domain}}" "$var_nextcloud_domain" "$target_copy_path"
+  replace_in_file "{{fastcgi_pass}}" "127.0.0.1:9074" "$target_copy_path"
+
+  # zagadnienia SSL
   _read "nextcloud_ssl" "Czy instalujemy SSL?" "y/n"
 
-  #przechodzimy proces generowania SSL
+  # przechodzimy proces generowania SSL
   # shellcheck disable=SC2154
   if [[ "$var_nextcloud_ssl" == "y" ]];
   then
     _cloudflare_ssl
 
-    #jeśli proces tworzenia certyfiaktu przebiegnie pomyślnie
-    #wtedy ustawiamy ścieżkę do "partu z konfiguracją ssl"
-    replace_in_file "#{{security_part}}" "include ${output_conf_path};" "$target_copy_path"
+    # jeśli proces tworzenia certyfiaktu przebiegnie pomyślnie
+    # wtedy ustawiamy ścieżkę do "partu z konfiguracją ssl"
+    replace_in_file "{{security_part}}" "include ${output_conf_path};" "$target_copy_path"
   fi
 
-  #jeśłi nie ma być generowany certyfikat wtedy zakładamy
-  #że został już wygenerowany i trzeba podać ścieżkę
+  # jeśłi nie ma być generowany certyfikat wtedy zakładamy
+  # że został już wygenerowany i trzeba podać ścieżkę
   if [[ "$var_nextcloud_ssl" == "n" ]];
   then
     _read "ssl_domain_name_ssl" "Podaj nazwę pliku .conf z ustawieniami certyfikatu (/etc/nginx/ssl/< ssl_domain_ssl_path >.conf)"
     # shellcheck disable=SC2154
     local -r ssl_domain_path_full="/etc/nginx/ssl/${var_ssl_domain_name_ssl}.conf"
-    replace_in_file "#{{security_part}}" "include ${ssl_domain_path_full};" "$target_copy_path"
+    replace_in_file "{{security_part}}" "include ${ssl_domain_path_full};" "${target_copy_path}"
   fi
   #https://upcloud.com/community/tutorials/install-nextcloud-centos/
 
   cd "${install_dir}" || exit
-  sudo -u nginx php occ maintenance:install \
-    --data-dir /usr/share/nginx/data \
-    --database "pgsql" \
-    --database-name "${nextcloud_db_name}" \
-    --database-user "${nextcloud_db_user}" \
-    --database-pass "${nextcloud_db_password}" \
-    --admin-user "${nextcloud_admin_login}" \
-    --admin-pass "${nextcloud_admin_password}"
 
-    sudo -u nginx php occ db:add-missing-indices
-    sudo -u nginx php occ maintenance:mode --on
-    sudo -u nginx php occ db:convert-filecache-bigint
-    sudo -u nginx php occ maintenance:mode --off
+  echo "Rozpoczynam instalację Nextcloud"
+  sudo -u nginx php occ maintenance:install \
+  --data-dir "${data_dir}" \
+  --database "pgsql" \
+  --database-name "${nextcloud_db_name}" \
+  --database-user "${nextcloud_db_user}" \
+  --database-pass "${nextcloud_db_password}" \
+  --admin-user "${admin_login}" \
+  --admin-pass "${admin_password}"
+
+  sudo -u nginx php occ db:add-missing-indices
+  sudo -u nginx php occ maintenance:mode --on
+  sudo -u nginx php occ db:convert-filecache-bigint
+  sudo -u nginx php occ maintenance:mode --off
+
+  #dodajemy host zaufany
+  replace_in_file "0 => 'localhost'," "0 => 'localhost', 1 => '${var_nextcloud_domain}'," "${nextcloud_config_file}"
+
+  return 0
 }
 
 #instalacja composera
@@ -213,12 +259,20 @@ function _cloudflare_ssl() {
   cd /tmp/acme.sh/ || exit
 
   #wprowadzamy adres email przypisany do cloudflare
-  _read "account_email" "Podaj adres email"
-  sh acme.sh --install --accountemail "$var_account_email"
+  local -r var_account_email=$(get_config "data" "cloudflare_email")
+  if [[ -z "$var_account_email" ]];
+  then
+    _read "account_email" "Podaj adres email"
+    sh acme.sh --install --accountemail "$var_account_email"
+  fi
 
   #wprowadzamy wygenerowany token
-  _read "account_token" "Podaj token (https://dash.cloudflare.com/profile/api-tokens)"
-  export CF_Token="$var_account_token"
+  local -r var_account_token=$(get_config "data" "cloudflare_token")
+  if [[ -z "$var_account_token" ]];
+  then
+    _read "account_token" "Podaj token (https://dash.cloudflare.com/profile/api-tokens)"
+    export CF_Token="$var_account_token"
+  fi
 
   #wprowadzamy nazwę domeny i generujemy certyfikat
   _read "installed_domain" "Wprowadź nazwę domeny w postaci: domena.pl"

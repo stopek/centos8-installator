@@ -28,10 +28,13 @@ function _conf_update() {
     sudo sed -i -e "s/listen = \/var\/opt\/remi\/php$1\/run\/php-fpm\/www.sock/listen = 127.0.0.1:90$1/gi" www.conf
 }
 
+
 #aktualizacjapliku z ustawieniami konfiguracyjnymi
 # $1 - wersja php (np. 7.2, 7.3, 8.0)
 # $2 - rozszerzenia bez wersji (np. php-fpm php-mysqli)
 function _base_install() {
+    epel_repository
+
     local php_version="$1"
     local without_dot="${php_version/./}"
 
@@ -65,9 +68,8 @@ function function_install_php72() {
   _read "install_php72" "Czy instalować PHP 7.2" "y/n"
 
   # shellcheck disable=SC2154
-  if [[ "$var_install_php72" == "y" ]]; then
-    epel_repository
-
+  if [[ "$var_install_php72" == "y" ]];
+  then
     #instalacja
     _base_install "7.2" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
 
@@ -84,9 +86,8 @@ function function_install_php73() {
   _read "install_php73" "Czy instalować PHP 7.3" "y/n"
 
   # shellcheck disable=SC2154
-  if [[ "$var_install_php73" == "y" ]]; then
-    epel_repository
-
+  if [[ "$var_install_php73" == "y" ]];
+  then
     #instalacja
     _base_install "7.3" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
 
@@ -103,9 +104,8 @@ function function_install_php74() {
   _read "install_php74" "Czy instalować PHP 7.4" "y/n"
 
   # shellcheck disable=SC2154
-  if [[ "$var_install_php74" == "y" ]]; then
-    epel_repository
-
+  if [[ "$var_install_php74" == "y" ]];
+  then
     #instalacja
     _base_install "7.4" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
 
@@ -150,15 +150,28 @@ function function_add_extension_to_php() {
       return 1
     fi
 
-    _read "install_to_php_extension" "Wprowadź jedno rozszerzenie (dla; php72-php-json będzie to: php-json)"
-    local php_without_dot="${var_install_to_php//./}"
+
+    _read "type_add_extension" "Gdzie dodajemy rozszerzenie? (remi[R], default[D])" "r/d"
 
     sudo dnf module reset php
     sudo dnf module enable php:remi-"$var_install_to_php"
-    # shellcheck disable=SC2154
-    sudo dnf install "php$php_without_dot-$var_install_to_php_extension"
 
-    sudo systemctl restart "php${php_without_dot}-php-fpm"
+    _read "install_to_php_extension" "Wprowadź jedno rozszerzenie (dla; php72-php-json będzie to: php-json)"
+
+    if [[ "$var_type_add_extension" != "r" ]];
+    then
+      local -r php_without_dot="${var_install_to_php//./}"
+      # shellcheck disable=SC2154
+      sudo dnf install --enablerepo=remi-test "php$php_without_dot-$var_install_to_php_extension" -y
+      sudo systemctl restart "php${php_without_dot}-php-fpm"
+    fi
+
+    if [[ "$var_type_add_extension" != "d" ]];
+    then
+      # shellcheck disable=SC2154
+      sudo dnf install "$var_install_to_php_extension" -y
+      sudo systemctl restart php-fpm
+    fi
   fi
 }
 
@@ -168,12 +181,28 @@ function function_install_default_php() {
   _read "install_default_php" "Jaką domyślną wersję zainstalować?" "${php_versions}/n"
 
   # shellcheck disable=SC2154
-  if [[ "$var_install_default_php" != "n" ]]; then
+  if [[ "$var_install_default_php" != "n" ]];
+  then
     epel_repository
 
     sudo dnf module reset php
     sudo dnf module enable php:remi-"$var_install_default_php"
-    sudo dnf install php php-opcache php-gd php-curl php-mysqlnd
-    sudo dnf install --enablerepo=remi-test "php$without_dot" ${php_list} -y
+    sudo dnf install php \
+    php-gd php-curl php-mysqlnd \
+    php-mbstring php-intl php-pecl-apcu php-opcache \
+    php-process php-zip php-json php-pecl-zip \
+    php-pear php-pecl-imagick php-fpm php-pecl-redis5 \
+    php-pgsql php-common php-pdo  \
+    php-lz4 php-xml php-pecl-crypto php-pecl-rar \
+    php-pecl-pq php-pecl-lzf php-cli php-pecl-apcu-bc
+
+    sudo dnf install "php$without_dot" ${php_list} -y
+
+    cd "/etc/php-fpm.d/" || exit
+    sudo sed -i -e 's/user = apache/user = nginx/gi' www.conf
+    sudo sed -i -e 's/group = apache/group = nginx/gi' www.conf
+    sudo sed -i -e "s/listen = \/run\/php-fpm\/www.sock/listen = 127.0.0.1:9000/gi" www.conf
+
+    sudo systemctl restart php-fpm
   fi
 }
