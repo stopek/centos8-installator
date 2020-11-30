@@ -12,7 +12,9 @@ function epel_repository() {
 # $1 - wersja php (np. 72)
 # $2 - tablica z rozszerzeniami (np. [php-fpm, php-json])
 function array_to_php_version() {
-  local -r array="$2"
+  local array
+  IFS=' ' read -r -a array <<< "$2"
+
   for index in "${!array[@]}"
   do
       printf "php%s-%s " "$1" "${array[index]}"
@@ -22,10 +24,10 @@ function array_to_php_version() {
 #aktualizacjapliku z ustawieniami konfiguracyjnymi
 # $1 - wersja php (np. 72, 73, 80)
 function _conf_update() {
-    cd "/etc/opt/remi/php$1/php-fpm.d/" || exit
-    sudo sed -i -e 's/user = apache/user = nginx/gi' www.conf
-    sudo sed -i -e 's/group = apache/group = nginx/gi' www.conf
-    sudo sed -i -e "s/listen = \/var\/opt\/remi\/php$1\/run\/php-fpm\/www.sock/listen = 127.0.0.1:90$1/gi" www.conf
+  cd "/etc/opt/remi/php$1/php-fpm.d/" || exit
+  sudo sed -i -e 's/user = apache/user = nginx/gi' www.conf
+  sudo sed -i -e 's/group = apache/group = nginx/gi' www.conf
+  sudo sed -i -e "s/listen = \/var\/opt\/remi\/php$1\/run\/php-fpm\/www.sock/listen = 127.0.0.1:90$1/gi" www.conf
 }
 
 
@@ -33,20 +35,21 @@ function _conf_update() {
 # $1 - wersja php (np. 7.2, 7.3, 8.0)
 # $2 - rozszerzenia bez wersji (np. php-fpm php-mysqli)
 function _base_install() {
-    epel_repository
+  epel_repository
 
-    local php_version="$1"
-    local without_dot="${php_version/./}"
+  local php_version="$1"
+  local without_dot="${php_version/./}"
+  local -r php_list=$(array_to_php_version "$without_dot" "${2}")
 
-    sudo dnf module reset php
-    sudo dnf module enable "php:remi-$php_version"
+  sudo dnf module reset php
+  sudo dnf module enable "php:remi-$php_version"
 
-    IFS=' ' read -r -a array <<< "$2"
-    local -r php_list=$(array_to_php_version "$without_dot" "${array[@]}")
-    sudo dnf install --enablerepo=remi-test "php$without_dot" "${php_list}" -y
 
-    sudo systemctl start "php$without_dot-php-fpm"
-    sudo systemctl enable "php$without_dot-php-fpm"
+  sudo dnf install --enablerepo=remi-test "php$without_dot" -y
+  sudo dnf install --enablerepo=remi-test ${php_list} -y
+
+  sudo systemctl start "php$without_dot-php-fpm"
+  sudo systemctl enable "php$without_dot-php-fpm"
 }
 
 #restart
@@ -63,13 +66,7 @@ function _restart() {
   restart_nginx
 }
 
-#instalacja php 7.2
-function function_install_php72() {
-  _read "install_php72" "Czy instalować PHP 7.2" "y/n"
-
-  # shellcheck disable=SC2154
-  if [[ "$var_install_php72" == "y" ]];
-  then
+function install_php72() {
     #instalacja
     _base_install "7.2" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
 
@@ -78,16 +75,9 @@ function function_install_php72() {
 
     #restart
     _restart "72"
-  fi
 }
 
-#instalacja php 7.3
-function function_install_php73() {
-  _read "install_php73" "Czy instalować PHP 7.3" "y/n"
-
-  # shellcheck disable=SC2154
-  if [[ "$var_install_php73" == "y" ]];
-  then
+function install_php73() {
     #instalacja
     _base_install "7.3" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
 
@@ -96,6 +86,50 @@ function function_install_php73() {
 
     #restart
     _restart "73"
+}
+
+function install_php74() {
+    #instalacja
+    _base_install "7.4" "php-fpm php-gd php-curl php-mysqlnd php-mbstring php-intl php-pecl-apcu php-opcache php-process php-zip php-json php-pecl-zip php-pear php-pecl-imagick php-pecl-redis5 php-pgsql php-common php-pdo php-lz4 php-xml php-pecl-crypto php-pecl-rar php-pecl-pq php-pecl-lzf php-cli php-pecl-apcu-bc"
+
+    #zmiana w konfiguracjach www.conf
+    _conf_update "74"
+
+    #restart
+    _restart "74"
+}
+
+function install_php80() {
+    #instalacja
+    _base_install "8.0" "php-fpm php-mysqli php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
+
+    #zmiana w konfiguracjach www.conf
+    _conf_update "80"
+
+    #restart
+    _restart "80"
+}
+
+#instalacja php 7.2
+function function_install_php72() {
+  _read "install_php72" "Czy instalować PHP 7.2" "y/n"
+
+  # shellcheck disable=SC2154
+  if [[ "$var_install_php72" == "y" ]];
+  then
+    install_php72
+  fi
+}
+
+
+#instalacja php 7.3
+function function_install_php73() {
+  _read "install_php73" "Czy instalować PHP 7.3" "y/n"
+
+  # shellcheck disable=SC2154
+  if [[ "$var_install_php73" == "y" ]];
+  then
+    install_php73
   fi
 }
 
@@ -106,14 +140,7 @@ function function_install_php74() {
   # shellcheck disable=SC2154
   if [[ "$var_install_php74" == "y" ]];
   then
-    #instalacja
-    _base_install "7.4" "php-fpm php-mysqli php-mysql php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
-
-    #zmiana w konfiguracjach www.conf
-    _conf_update "74"
-
-    #restart
-    _restart "74"
+    install_php74
   fi
 }
 
@@ -122,15 +149,9 @@ function function_install_php80() {
   _read "install_php80" "Czy instalować PHP 8.0" "y/n"
 
   # shellcheck disable=SC2154
-  if [[ "$var_install_php80" == "y" ]]; then
-    #instalacja
-    _base_install "8.0" "php-fpm php-mysqli php-pdo php-common php-cli php-gd php-json php-mbstring php-mysqlnd php-xml php-xmlrpc php-opcache php-apcu php-xdebug"
-
-    #zmiana w konfiguracjach www.conf
-    _conf_update "80"
-
-    #restart
-    _restart "80"
+  if [[ "$var_install_php80" == "y" ]];
+  then
+    install_php80
   fi
 }
 
@@ -195,8 +216,6 @@ function function_install_default_php() {
     php-pgsql php-common php-pdo  \
     php-lz4 php-xml php-pecl-crypto php-pecl-rar \
     php-pecl-pq php-pecl-lzf php-cli php-pecl-apcu-bc
-
-    sudo dnf install "php$without_dot" ${php_list} -y
 
     cd "/etc/php-fpm.d/" || exit
     sudo sed -i -e 's/user = apache/user = nginx/gi' www.conf

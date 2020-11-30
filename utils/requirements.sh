@@ -53,3 +53,39 @@ function require_symfony() {
       call_module_function "tools" "function_install_symfony"
     fi
 }
+
+# reguła wymagalności dla PHP7.2 z repozytorium remi
+function require_php72_remi() {
+    if ! command_exists php72;
+    then
+      require_message_before "PHP 7.2 remi:repo"
+      call_module_function "php" "install_php72"
+    fi
+}
+
+# reguła wymagalności dla PHP7.3 z repozytorium remi
+function require_php73_remi() {
+    if ! command_exists php73;
+    then
+      require_message_before "PHP 7.3 remi:repo"
+      call_module_function "php" "install_php73"
+    fi
+}
+
+# reguła wymagalności dla PHP7.4 z repozytorium remi
+function require_php74_remi() {
+    if ! command_exists php74;
+    then
+      require_message_before "PHP 7.4 remi:repo"
+      call_module_function "php" "install_php74"
+    fi
+}
+
+# reguła wymagalności dla PHP8.0 z repozytorium remi
+function require_php80_remi() {
+    if ! command_exists php80;
+    then
+      require_message_before "PHP 8.0 remi:repo"
+      call_module_function "php" "install_php80"
+    fi
+}

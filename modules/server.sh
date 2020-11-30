@@ -13,6 +13,12 @@ function function_install_nginx() {
 
     mkdir -p /etc/nginx/sites-enabled/
     mkdir -p /etc/nginx/sites-available/
+
+    #kopiujemy domyślną konfigurację
+    rm -f /etc/nginx/nginx.conf
+    sudo cp "${base}/templates/nginx.conf" "/etc/nginx/"
+
+    restart_nginx
   fi
 }
 
