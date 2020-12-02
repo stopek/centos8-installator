@@ -194,8 +194,8 @@ function function_install_composer() {
     then
       _read "install_default_php" "Czy zainstalować domyślną wersję php?" "y/n"
 
-      if [[ "$var_install_default_php" == "y" ]];
-      then
+      `if [[ "$var_install_default_php" == "y" ]];
+      then`
         call_module_function "php" "function_install_default_php"
       else
         return 1

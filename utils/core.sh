@@ -27,6 +27,14 @@ function import_utils() {
   import "${utils_dir}" "${1}"
 }
 
+# wczytuje plik z procesem
+# $1 - nazwa pliku z procesem (np. php.choice)
+function import_process() {
+  local -r process_dir=$(process_dir)
+
+  import "${process_dir}" "${1}"
+}
+
 # wczytuje plik z narzędziami
 # $1 - nazwa pliku (np. core)
 function import_module() {
@@ -50,6 +58,14 @@ function call_controller_function() {
   import_controller "${1}"
 
   eval "${2}" "$3" "$4"
+}
+
+# uruchamia process
+# nazwa pliku procesu
+function call_process() {
+  import_process "${1}"
+
+  eval "start"
 }
 
 # wywołuje funkcję z modułu

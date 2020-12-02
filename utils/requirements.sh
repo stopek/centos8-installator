@@ -89,3 +89,15 @@ function require_php80_remi() {
       call_module_function "php" "install_php80"
     fi
 }
+# reguła wymagalności, która sprowadza się
+# do instalacji prostej paczki z dnf
+# $1 - nazwa wymaganej komendy (np. telnet)
+function require_simple_dnf() {
+  local -r command_name="${1}"
+
+  if ! command_exists "${command_name}";
+  then
+    require_message_before "${command_name}"
+    install_via_dnf "${command_name}"
+  fi
+}

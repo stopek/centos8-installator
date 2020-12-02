@@ -16,6 +16,14 @@ import_utils "common"
 # the option will not be selected
 current_selected_menu=1
 
+#call_module_function "projects" "clear_symfony"
+#
+#exit 1
+#call_process "php.choice"
+#
+#exit 1
+
+
 # główna funkcja zarządzająca wyborami
 # $1 - numer aktualnie wybranego menu
 function init() {
@@ -42,27 +50,14 @@ function init() {
   done
 
   #sortujemy klucze z tablicy z listą controllerów
-  KEYS=$(
-    for KEY in "${!controllers_array[@]}"; do
-      echo "$KEY"
-    done | sort | awk -F::: '{print $1}'
-  )
+  KEYS=$(get_and_sort_array_by_keys controllers_array)
 
   #wyświetlamy menu
   for KEY in $KEYS; do
     controller_name=${controllers_array[$KEY]}
     name=$(call_controller_function "$controller_name" "name")
 
-    if [[ $current_selected_menu = "$KEY" ]]; then
-      printf "\e[30m\e[107m"
-    fi
-
-    #dodajemy controller do menu
-    double_column "$KEY" "$name"
-
-    if [[ $current_selected_menu = "$KEY" ]]; then
-      printf "\e[0m"
-    fi
+    conditionally_colorize "$(double_column "$KEY" "$name")" "\e[30m\e[107m" "${current_selected_menu} = ${KEY}"
 
     max_key_number="$KEY"
   done

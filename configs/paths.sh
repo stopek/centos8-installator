@@ -57,3 +57,12 @@ function logs_dir() {
 function configs_dir() {
   echo "/configs"
 }
+
+# zwraca ścieżkę do katalogu z procesami
+# ścieżka powinna byc bezwzględna względem
+# głównego pliku .sh
+# powinna rozpoczynać się / i nie zawierać
+# go na samym końcu
+function process_dir() {
+  echo "/process"
+}

@@ -3,7 +3,7 @@
 TRUE=0
 FALSE=1
 
-#generuje menu z pliku
+# generuje menu z pliku
 # $1 - ścieżka do pliku .txt z wpisami menu bez .txt na końcu
 function generate_menu() {
   # shellcheck disable=SC2154
@@ -56,7 +56,7 @@ function function_exists() {
     return $?
 }
 
-#zwykla funkcja in_array
+# zwykla funkcja in_array
 function array_contains() {
   local seeking=$1
   shift
@@ -70,7 +70,7 @@ function array_contains() {
   return $in
 }
 
-#formater wproawdzania danych
+# formater wproawdzania danych
 # $1 - nazwa zmiennej
 # $2 - opis/pytanie dot. wprowadzanej wartości
 # $3 - dostępne opcje wprowadzone po / (np: y/x). Jeśli puste wtedy tylko wymaga wprowadzenia.
@@ -97,13 +97,13 @@ function _read() {
   declare -g var_$1
   local ref=var_$1
 
-  #jeśli parametr $4 nie zostanie przekazany
-  #wtedy użytkownik może wprowadzić dowolny
-  #tekst i potwierdzić go ENTER'em
+  # jeśli parametr $4 nie zostanie przekazany
+  # wtedy użytkownik może wprowadzić dowolny
+  # tekst i potwierdzić go ENTER'em
   #
-  #w przeciwnym razie ustawiamy tak, żeby
-  #potwierdzenie było od razu po wciśnięciu
-  #pierwszego znaku
+  # w przeciwnym razie ustawiamy tak, żeby
+  # potwierdzenie było od razu po wciśnięciu
+  # pierwszego znaku
   if [ -z "$4" ];
   then
     read -r -p "| " "var_$1"
@@ -144,7 +144,7 @@ function _read() {
   echo -e "\e[0m"
 }
 
-#sprawdza czy dana komenda istnieje
+# sprawdza czy dana komenda istnieje
 # $1 - nazwa komendy (np. nano)
 function command_exists() {
   type "$1" &>/dev/null
@@ -172,17 +172,19 @@ function install_via_dns_service() {
   sudo systemctl start "${1}.service"
 }
 
+# zamienia wszystkie / na \/
+# $1 - tekst do zamiany
 function escape_forward_slashes() {
-     # Validate parameters
-     if [ -z "$1" ]
-     then
-             echo -e "Error - no parameter specified!"
-             return 1
-     fi
+  # Validate parameters
+  if [ -z "$1" ]
+  then
+    echo -e "Error - no parameter specified!"
+    return 1
+  fi
 
-     # Perform replacement
-     echo ${1} | sed -e "s#/#\\\/#g"
-     return 0
+  # Perform replacement
+  echo ${1} | sed -e "s#/#\\\/#g"
+  return 0
 }
 
 # zamienia treść w pliku
@@ -213,7 +215,41 @@ function ask_for_remove_dir_if_exists() {
   fi
 }
 
-#sprawdza czy plik istnieje
+# funkcja pobiera klucze z tablicy asocjacyjnej
+# i sortuje je rosnąco zwracając klucze
+# $1 - tablica asocjacyjna
+function get_and_sort_array_by_keys() {
+  local -n data_ref=$1
+
+  for KEY in "${!data_ref[@]}"; do
+    echo "$KEY"
+  done | sort | awk -F::: '{print $1}'
+}
+
+# funkcja koloruje na wskazany kolor
+# przekazany string/funkcję
+# $1 - tekst do kolorowania
+# $2 - zastosowany kolor
+# $3 - warunek bool true|false
+function conditionally_colorize() {
+  local -r text="${1}"
+  local -r color="${2}"
+  local -r condition=`expr $3`
+
+  if [[ ${condition} = "1" ]];
+  then
+    printf "${color}"
+  fi
+
+  echo "${text}"
+
+  if [[ ${condition} = "1" ]];
+  then
+      printf "\e[0m"
+  fi
+}
+
+# sprawdza czy plik istnieje
 # $1 - ścieżka do pliku
 function file_exists() {
   if [[ -f "$1" ]];
@@ -224,14 +260,14 @@ function file_exists() {
   fi
 }
 
-#restartowanie nginx jeśli zainstalowany
+# restartowanie nginx jeśli zainstalowany
 function restart_nginx() {
   if command_exists nginx; then
     sudo systemctl restart nginx.service
   fi
 }
 
-#funkcja sprawdza czy w danym pliku znaleziono stringa
+# funkcja sprawdza czy w danym pliku znaleziono stringa
 # $1 - szukana treść
 # $2 - nazwa pliku
 function string_exists_in_file() {
